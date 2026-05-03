@@ -90,6 +90,21 @@ cycles. `env.step()` and `agents.proxy_reward_for_action()` use this ordering.
 - `results.json` — per-agent metrics + full SoC traces from the latest run.
 - `fig_dod_tuned.png` — DoD histograms equivalent to paper Fig 2.
 
+## LUMI run (T=1M, 2 seeds, het fleets)
+
+10-task array on `small` partition. Job 18086082. ~hour each, all in parallel.
+
+| Config | Naive D | Greedy D | ELM-RL D | ELM vs Naive | ELM vs Greedy |
+|---|---:|---:|---:|---:|---:|
+| B=(2, 20)   | 3.688 ± 0.010 | 1.825 ± 0.002 | 1.858 ± 0.004 | **−49.6%** | −1.8% |
+| B=(5, 20)   | 2.374 ± 0.005 | 1.770 ± 0.001 | 1.949 ± 0.077 | **−17.9%** | −10.1% |
+| B=(2, 50)   | 3.134 ± 0.005 | 0.788 ± 0.009 | 0.792 ± 0.010 | **−74.7%** | −0.5% |
+| B=(5, 50)   | 1.796 ± 0.002 | 0.771 ± 0.008 | 0.816 ± 0.009 | **−54.6%** | −5.9% |
+| B=(10,100)  | 0.963 ± 0.003 | 0.378 ± 0.001 | 0.399 ± 0.002 | **−58.6%** | −5.6% |
+
+ELM holds at scale: B=(10,100) still −58.6% over Naive, within 5.6% of Greedy.
+Cross-seed σ tiny (~0.005-0.08). See `fig_lumi_summary.png`.
+
 ## Big het runs (T=500k, single seed, post-fix ELM)
 
 These four configs are what `lumi_run.sh` will scale up.
