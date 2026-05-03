@@ -90,9 +90,46 @@ cycles. `env.step()` and `agents.proxy_reward_for_action()` use this ordering.
 - `results.json` — per-agent metrics + full SoC traces from the latest run.
 - `fig_dod_tuned.png` — DoD histograms equivalent to paper Fig 2.
 
-## LUMI run (T=1M, 2 seeds, het fleets)
+## Honest framing
 
-10-task array on `small` partition. Job 18086082. ~hour each, all in parallel.
+ELM-RL is, in practice, a **smooth function-approximator copy of Greedy** on
+this proxy reward. Action-match analysis (`action_match.py`) shows ELM picks
+the same action as Greedy 95.7-99.6% of the time on held-out trajectories at
+B=(2,50) and B=(10,100). Per-step degradation is identical to 4 decimals.
+
+| Config         | Seed | ELM≡Greedy match | sign-match | D_ELM | D_Greedy |
+|----------------|-----:|----------------:|-----------:|------:|---------:|
+| B=(2, 50)      | 42   | **99.5%**       | 99.8%      | 0.0165| 0.0165   |
+| B=(2, 50)      |  7   | **99.6%**       | 99.9%      | 0.0170| 0.0170   |
+| B=(10, 100)    | 42   | 95.7%           | 97.8%      | 0.0086| 0.0085   |
+| B=(10, 100)    |  7   | 97.4%           | 98.8%      | 0.0085| 0.0085   |
+
+So the headline result ("ELM beats Naive 17-74%") is real, but the mechanism
+is `ELM ≈ Greedy ≫ Naive`, not multi-step temporal-difference credit
+assignment. The win comes from the **proxy reward** plus the heterogeneous
+fleet structure -- not from RL discovering a non-myopic policy. RL would only
+provide additional value if (a) the reward were sparse (e.g., true rainflow
+on cycle completion), (b) the dynamics had hidden state RL needs to model, or
+(c) the action enumeration itself were intractable.
+
+Note that ELM does **not** beat Greedy on compute either: both enumerate
+feasible actions per state. ELM's per-action cost is one ELM forward pass;
+Greedy's is one proxy-reward formula evaluation. They scale identically in N.
+
+## Headline (one command, ~5 min on a laptop)
+
+```bash
+pixi run python repro.py
+```
+
+Trains ELM-RL on B=(10,100) heterogeneous fleet, then plots per-battery DoD
+histograms (`fig_headline.png`): Naive over-cycles the small battery (mass at
+high DoD); ELM-RL redistributes regulation across the fleet so the small
+battery stays shallow. Total degradation drops ~55% vs Naive.
+
+## LUMI run (T=1M, N=2 seeds per config, het fleets)
+
+10-task Slurm array on `small` partition (8 CPUs/task). Job 18086082.
 
 | Config | Naive D | Greedy D | ELM-RL D | ELM vs Naive | ELM vs Greedy |
 |---|---:|---:|---:|---:|---:|
@@ -102,8 +139,11 @@ cycles. `env.step()` and `agents.proxy_reward_for_action()` use this ordering.
 | B=(5, 50)   | 1.796 ± 0.002 | 0.771 ± 0.008 | 0.816 ± 0.009 | **−54.6%** | −5.9% |
 | B=(10,100)  | 0.963 ± 0.003 | 0.378 ± 0.001 | 0.399 ± 0.002 | **−58.6%** | −5.6% |
 
+Caveat: cross-seed σ shown is paired between two seeds only (N=2). ELM−Greedy
+gaps for B=(2,50), B=(2,20), B=(10,100) are within paired noise.
+
 ELM holds at scale: B=(10,100) still −58.6% over Naive, within 5.6% of Greedy.
-Cross-seed σ tiny (~0.005-0.08). See `fig_lumi_summary.png`.
+See `fig_lumi_summary.png`.
 
 ## Big het runs (T=500k, single seed, post-fix ELM)
 

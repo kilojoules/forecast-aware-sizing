@@ -1,3 +1,6 @@
+Note: σ values come from N=2 seeds (paired). Differences <~0.05 between
+agents at the same config are not statistically separable on this sample size.
+
 | Config | Naive | Greedy | ELM-RL | ELM vs Naive | ELM vs Greedy |
 |---|---:|---:|---:|---:|---:|
 | B=(2, 20) | 3.688 | 1.825 | 1.858±0.004 | **+49.6%** | -1.8% |
