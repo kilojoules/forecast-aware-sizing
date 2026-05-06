@@ -1,5 +1,8 @@
 # Hydesign integration: pilot plan
 
+> **OUTCOME — Pilot 1 ran, killed the project (2026-05-05).** See
+> `HYDESIGN_PILOT1_MEMO.md`. Pilots 2-4 cancelled or decoupled.
+
 Idea-critic vetted the question list (`HYDESIGN_INTEGRATION.md`). Verdict:
 **REFINE-leaning-KILL**. Critique below, then 4 ordered pilots.
 

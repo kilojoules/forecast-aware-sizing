@@ -1,5 +1,12 @@
 # Integrating battery_gym into hydesign
 
+> **STATUS — KILLED 2026-05-05.** Pilot 1 (`HYDESIGN_PILOT1_MEMO.md`) found
+> zero published hydesign use cases needing both heterogeneous fleets AND
+> sub-hourly markets. hydesign already supports sub-hourly + balancing
+> markets on a single aggregate battery; battery_gym's heterogeneous-fleet
+> RL story is orthogonal, not complementary. Document retained as the
+> design rationale; do not implement.
+
 Goal: make the `battery_gym` RL controller (env + ELM-RL agent) drop cleanly into the hydesign hybrid-plant pipeline, replacing or augmenting the existing `ems` openMDAO component.
 
 ## What hydesign exposes
