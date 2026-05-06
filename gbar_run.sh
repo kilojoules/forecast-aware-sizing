@@ -113,6 +113,10 @@ case "$cmd" in
     deploy)
         prompt_password
         ssh_run "set -e
+            source /etc/profile 2>/dev/null || true
+            [ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+            command -v bsub >/dev/null || PATH=/usr/local/lsf/bin:/opt/ibm/lsfsuite/lsf/10.1/linux2.6-glibc2.3-x86_64/bin:\$PATH
+            command -v bsub >/dev/null || { echo bsub not found in PATH; exit 1; }
             mkdir -p ~/projects
             cd ~/projects
             if [ -d battery_gym/.git ]; then
@@ -127,7 +131,9 @@ case "$cmd" in
         ;;
     status)
         prompt_password
-        ssh_run "echo === bjobs === ; bjobs -a -W 2>&1 | head -20 ; echo ; echo === out tail === ; tail -40 $REMOTE_DIR/phase2_ppo_*.out 2>/dev/null | tail -40 ; echo ; echo === err tail === ; tail -20 $REMOTE_DIR/phase2_ppo_*.err 2>/dev/null | tail -20"
+        ssh_run "source /etc/profile 2>/dev/null; [ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null
+            command -v bjobs >/dev/null || PATH=/usr/local/lsf/bin:/opt/ibm/lsfsuite/lsf/10.1/linux2.6-glibc2.3-x86_64/bin:\$PATH
+            echo === bjobs === ; bjobs -a -W 2>&1 | head -20 ; echo ; echo === out tail === ; tail -40 $REMOTE_DIR/phase2_ppo_*.out 2>/dev/null | tail -40 ; echo ; echo === err tail === ; tail -20 $REMOTE_DIR/phase2_ppo_*.err 2>/dev/null | tail -20"
         ;;
     fetch)
         prompt_password
@@ -159,8 +165,12 @@ EXPECT_EOF
         ssh -O exit gbar 2>/dev/null || true
         echo "[gbar_run] ControlMaster session closed."
         ;;
+    diag)
+        prompt_password
+        ssh_run "echo === PATH === ; echo \$PATH ; echo ; echo === bsub === ; command -v bsub ; echo ; echo === bashrc head === ; head -30 ~/.bashrc 2>/dev/null ; echo ; echo === LSF locations === ; ls -d /opt/ibm/lsfsuite 2>/dev/null ; ls -d /usr/local/lsf 2>/dev/null ; ls /etc/profile.d/ 2>/dev/null | grep -i lsf ; echo === after profile === ; source /etc/profile 2>/dev/null ; source ~/.bashrc 2>/dev/null ; echo PATH=\$PATH ; command -v bsub"
+        ;;
     *)
-        echo "Usage: $0 {deploy|status|fetch|shell|cancel-master}"
+        echo "Usage: $0 {deploy|status|fetch|shell|cancel-master|diag}"
         exit 1
         ;;
 esac
