@@ -37,6 +37,10 @@ prompt_password() {
         export DTU_PW=""
         return
     fi
+    if [[ ! -t 0 ]]; then
+        echo "[gbar_run] No TTY and no ControlMaster session. Please re-run from interactive shell." >&2
+        exit 4
+    fi
     echo "[gbar_run] DTU password (off-VPN 2FA) -- input hidden:"
     read -s DTU_PW
     echo
