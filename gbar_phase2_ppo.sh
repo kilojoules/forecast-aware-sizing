@@ -8,30 +8,40 @@
 #BSUB -o phase2_ppo_%J.out
 #BSUB -e phase2_ppo_%J.err
 
-# GBAR submission for phase 2 PPO training. CPU-only; PPO on small env is fast.
+# GBAR submission for phase 2 PPO training. Uses GBAR module system + a
+# project-local venv (no pixi -- pixi is not installed on gbar).
 #
 # Usage:
-#   # On gbar:  cd ~/battery_gym && bsub < gbar_phase2_ppo.sh
-#
-# Requires:
-#   pixi env (auto-built from pixi.toml on first run)
-#   stable-baselines3, gymnasium, torch  (added via pip install in run)
+#   bsub < gbar_phase2_ppo.sh
 
 set -e
 echo "[gbar] starting phase2 PPO at $(date)"
-echo "[gbar] hostname: $(hostname)"
-echo "[gbar] cwd:      $(pwd)"
-echo "[gbar] cores:    $LSB_DJOB_NUMPROC"
+echo "[gbar] hostname:  $(hostname)"
+echo "[gbar] cwd:       $(pwd)"
+echo "[gbar] cores:     ${LSB_DJOB_NUMPROC:-?}"
 
-# Pixi env -- assumes pixi installed in user's home
-export PATH="$HOME/.pixi/bin:$PATH"
+# 1. Bring up the module system + load python
+source /etc/profile 2>/dev/null || true
+[ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+module load python3/3.11.9
 
-# Build / use pixi env. cvxpy + sb3 needed; install via pip into pixi env.
-pixi install
-pixi run python -m pip install --quiet stable-baselines3 gymnasium
+# 2. Build / reuse a venv in the project dir
+VENV="$HOME/projects/battery_gym/.venv311"
+if [ ! -d "$VENV" ]; then
+    echo "[gbar] creating venv at $VENV"
+    python3 -m venv "$VENV"
+    "$VENV/bin/pip" install --quiet --upgrade pip
+    "$VENV/bin/pip" install --quiet \
+        numpy '<2' matplotlib scipy fatpack cvxpy \
+        torch --index-url https://download.pytorch.org/whl/cpu
+    "$VENV/bin/pip" install --quiet stable-baselines3 gymnasium
+    echo "[gbar] venv ready"
+fi
+source "$VENV/bin/activate"
+python3 -c "import numpy, scipy, cvxpy, torch, stable_baselines3, gymnasium; print('imports OK')"
 
-# Run with multi-env vectorization (n_envs=4 -> 4 parallel CPU envs)
-pixi run python phase2_ppo.py \
+# 3. Run training + benchmark
+python3 -u phase2_ppo.py \
     --total_timesteps 1000000 \
     --n_envs 4 \
     --T 168 \
