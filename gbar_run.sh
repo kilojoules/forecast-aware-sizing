@@ -174,16 +174,20 @@ EXPECT_EOF
         # us authenticated across polls (no re-prompt within 30 min idle).
         prompt_password
         echo "[gbar_run] polling job status every 60 s..."
+        # Disable strict mode in this branch -- ssh_run returning non-zero
+        # transiently shouldn't kill the whole watcher.
+        set +e
         while true; do
-            # bjobs -a default header has STAT in column 6 on gbar; use grep+awk
             STATUS=$(ssh_run 'source /etc/profile 2>/dev/null; bjobs -a -noheader 2>&1 | head -1 | awk "{print \$6}"' 2>&1 | tail -1)
             echo "  $(date +%H:%M:%S)  status=$STATUS"
             case "$STATUS" in
                 DONE|EXIT) break ;;
+                RUN|PEND|PSUSP|USUSP|SSUSP|WAIT|UNKWN) sleep 60 ;;
                 "") echo "  no jobs found, exiting" ; exit 0 ;;
+                *) echo "  unrecognized status [$STATUS], sleeping 60" ; sleep 60 ;;
             esac
-            sleep 60
         done
+        set -e
         mkdir -p "$LOCAL_RESULTS_DIR"
         ssh_rsync "gbar:$REMOTE_DIR/ppo_logs/" "$LOCAL_RESULTS_DIR/"
         ssh_rsync "gbar:$REMOTE_DIR/ppo_policy.zip" "$LOCAL_RESULTS_DIR/" || true
