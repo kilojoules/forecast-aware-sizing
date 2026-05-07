@@ -32,7 +32,8 @@ if [ ! -d "$VENV" ]; then
     python3 -m venv "$VENV"
     "$VENV/bin/pip" install --quiet --upgrade pip
     "$VENV/bin/pip" install --quiet \
-        numpy '<2' matplotlib scipy fatpack cvxpy \
+        'numpy<2' matplotlib scipy fatpack cvxpy
+    "$VENV/bin/pip" install --quiet \
         torch --index-url https://download.pytorch.org/whl/cpu
     "$VENV/bin/pip" install --quiet stable-baselines3 gymnasium
     echo "[gbar] venv ready"
