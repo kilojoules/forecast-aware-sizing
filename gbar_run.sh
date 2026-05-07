@@ -178,8 +178,8 @@ EXPECT_EOF
         # transiently shouldn't kill the whole watcher.
         set +e
         while true; do
-            STATUS=$(ssh_run 'source /etc/profile 2>/dev/null; bjobs -a -noheader 2>&1 | head -1 | awk "{print \$6}"' 2>&1 | tail -1)
-            echo "  $(date +%H:%M:%S)  status=$STATUS"
+            STATUS=$(ssh_run 'source /etc/profile 2>/dev/null; bjobs -a -noheader 2>&1 | head -1 | awk "{print \$6}"' 2>&1 | tail -1 | tr -d '\r\n[:space:]')
+            echo "  $(date +%H:%M:%S)  status=[$STATUS]"
             case "$STATUS" in
                 DONE|EXIT) break ;;
                 RUN|PEND|PSUSP|USUSP|SSUSP|WAIT|UNKWN) sleep 60 ;;
