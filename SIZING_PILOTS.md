@@ -1,5 +1,10 @@
 # Sizing-under-uncertainty: research scope
 
+> **STATUS — KILLED 2026-05-08 by pilot S1.** See `SIZING_S1_KILL_MEMO.md`.
+> Sizing decision is invariant to dispatch fidelity across noise levels
+> 3-18. NPV-at-optimum changes (+1.6 to +55%), but `b_E*` does not.
+> Document retained as design rationale; do not implement S2-S4.
+
 **Date:** 2026-05-07
 **Thesis:** For hybrid power plants with batteries, the optimal sizing
 under deterministic-perfect-foresight inner dispatch differs systematically
