@@ -25,4 +25,5 @@ requests = ">=2"
 [pypi-dependencies]
 fatpack = "==0.7.8"
 cvxpy = ">=1.7"
-gridstatus = ">=0.36"
+# gridstatus is only used locally to pull ERCOT historical CSVs into
+# data/ercot/. Not needed at runtime on LUMI; data is rsync'd in.
