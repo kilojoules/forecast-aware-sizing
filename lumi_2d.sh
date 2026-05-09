@@ -16,10 +16,6 @@
 
 set -e
 cd /scratch/project_465002609/julian/battery_gym
-source $HOME/miniconda3/etc/profile.d/conda.sh 2>/dev/null || true
-conda activate batterygym 2>/dev/null || pixi shell --frozen
-
 mkdir -p logs results_2d
-
-python -u paper_2d_task.py --task_id ${SLURM_ARRAY_TASK_ID} \
+pixi run python -u paper_2d_task.py --task_id ${SLURM_ARRAY_TASK_ID} \
     --out_dir results_2d
