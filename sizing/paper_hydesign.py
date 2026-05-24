@@ -10,9 +10,9 @@ schema as `paper_<year>.json`.
 
 Run as (from /tmp to avoid hydesign namespace shadowing):
     cd /tmp && conda run -n topfarm-env python \
-      /Users/julianquick/portfolio_copy/battery_gym/paper_hydesign.py \
+      /Users/julianquick/portfolio_copy/battery_gym/sizing/paper_hydesign.py \
       --source dk1 --year 2022 \
-      --out /Users/julianquick/portfolio_copy/battery_gym/results_hydesign/dk1_2022.json
+      --out /Users/julianquick/portfolio_copy/battery_gym/results/hydesign/dk1_2022.json
 """
 from __future__ import annotations
 
@@ -26,8 +26,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BG = "/Users/julianquick/portfolio_copy/battery_gym"
-sys.path.insert(0, BG)
+SIZING_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SIZING_DIR)
 os.chdir("/tmp")  # avoid hydesign namespace shadowing
 
 from hydesign_merchant_fork import ems_cplex_merchant  # noqa: E402

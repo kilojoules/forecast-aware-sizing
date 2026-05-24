@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -36,8 +37,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BG = "/Users/julianquick/portfolio_copy/battery_gym"
-sys.path.insert(0, BG)
+SIZING_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SIZING_DIR)
 
 from arbitrage_agents import lp_linear_actions  # noqa: E402
 from dk_loader import load_dk_year, load_dk_resources  # noqa: E402

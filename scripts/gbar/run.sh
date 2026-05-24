@@ -24,7 +24,7 @@ set -euo pipefail
 PASSPHRASE="cats"   # ssh key passphrase (from ~/.gbar.md, low-sensitivity)
 REMOTE_DIR='~/projects/battery_gym'
 REPO_URL="https://github.com/kilojoules/battery_gym.git"
-LOCAL_RESULTS_DIR="./gbar_results"
+LOCAL_RESULTS_DIR="./results/gbar"
 
 cmd="${1:-status}"
 
@@ -130,8 +130,8 @@ case "$cmd" in
                 git clone $REPO_URL battery_gym
                 cd battery_gym
             fi
-            chmod +x gbar_phase2_ppo.sh
-            bsub < gbar_phase2_ppo.sh"
+            chmod +x scripts/gbar/phase2_ppo.sh
+            bsub < scripts/gbar/phase2_ppo.sh"
         ;;
     status)
         prompt_password
@@ -196,7 +196,7 @@ EXPECT_EOF
         ssh_rsync "gbar:$REMOTE_DIR/phase2_ppo_*.err" "$LOCAL_RESULTS_DIR/" || true
         if [ -f "$LOCAL_RESULTS_DIR/ppo_logs/phase2_ppo_results.json" ]; then
             echo "[gbar_run] fetched. running plot..."
-            python3 phase2_ppo_plot.py "$LOCAL_RESULTS_DIR/ppo_logs/phase2_ppo_results.json"
+            python3 rl_elm/phase2_ppo_plot.py "$LOCAL_RESULTS_DIR/ppo_logs/phase2_ppo_results.json"
         else
             echo "[gbar_run] no results.json found; check gbar_results/phase2_ppo_*.err for failure cause."
         fi

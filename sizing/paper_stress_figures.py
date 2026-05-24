@@ -6,7 +6,10 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+SIZING_DIR = Path(__file__).resolve().parent
+RESULTS = SIZING_DIR.parent / "results"
+FIGURES = SIZING_DIR.parent / "paper" / "figures"
+sys.path.insert(0, str(SIZING_DIR))
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,10 +26,10 @@ def lifetime_npv(R, b_E, b_P=B_P_DEFAULT):
 
 
 # -----------------------------------------------------------------------------
-# 2-D heatmap from results_2d/*.json
+# 2-D heatmap from ../results/2d/*.json
 # -----------------------------------------------------------------------------
-def figure_2d_heatmap(out: str = "fig_paper_2d.png"):
-    files = sorted(glob.glob("results_2d/2d_*.json"))
+def figure_2d_heatmap(out: str = str(FIGURES / "fig_paper_2d.png")):
+    files = sorted(glob.glob(str(RESULTS / "2d" / "2d_*.json")))
     if not files:
         print("no results_2d files; skipping")
         return
@@ -85,7 +88,7 @@ def figure_2d_heatmap(out: str = "fig_paper_2d.png"):
 # -----------------------------------------------------------------------------
 # Quantile-vs-persistence comparison
 # -----------------------------------------------------------------------------
-def figure_quantile_vs_persistence(out: str = "fig_paper_quantile.png"):
+def figure_quantile_vs_persistence(out: str = str(FIGURES / "fig_paper_quantile.png")):
     fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharex=True)
     panels = [(s, y) for s in ["dk1", "ercot"] for y in [2021, 2022, 2023]]
     for i, (src, year) in enumerate(panels):
@@ -93,16 +96,16 @@ def figure_quantile_vs_persistence(out: str = "fig_paper_quantile.png"):
         # Persistence
         try:
             if src == "dk1":
-                p = json.load(open(f"paper_{year}.json"))
+                p = json.load(open(str(RESULTS / "main" / f"paper_{year}.json")))
                 ye_p = p["by_year"][str(year)]
             else:
-                p = json.load(open("paper_ercot.json"))
+                p = json.load(open(str(RESULTS / "main" / "paper_ercot.json")))
                 ye_p = p["by_year"][str(year)]
         except FileNotFoundError:
             ax.axis("off"); continue
         # Quantile
         try:
-            q = json.load(open(f"results_quantile/{src}_{year}.json"))
+            q = json.load(open(str(RESULTS / "quantile" / f"{src}_{year}.json")))
             ye_q = q["by_year"][str(year)]
         except FileNotFoundError:
             ye_q = None
@@ -140,22 +143,22 @@ def figure_quantile_vs_persistence(out: str = "fig_paper_quantile.png"):
 # -----------------------------------------------------------------------------
 # SLP comparison
 # -----------------------------------------------------------------------------
-def figure_slp(out: str = "fig_paper_slp.png"):
+def figure_slp(out: str = str(FIGURES / "fig_paper_slp.png")):
     fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharex=True)
     panels = [(s, y) for s in ["dk1", "ercot"] for y in [2021, 2022, 2023]]
     for i, (src, year) in enumerate(panels):
         ax = axes[i // 3, i % 3]
         try:
             if src == "dk1":
-                p = json.load(open(f"paper_{year}.json"))
+                p = json.load(open(str(RESULTS / "main" / f"paper_{year}.json")))
                 ye_p = p["by_year"][str(year)]
             else:
-                p = json.load(open("paper_ercot.json"))
+                p = json.load(open(str(RESULTS / "main" / "paper_ercot.json")))
                 ye_p = p["by_year"][str(year)]
         except FileNotFoundError:
             ax.axis("off"); continue
         try:
-            s_data = json.load(open(f"results_slp/{src}_{year}.json"))
+            s_data = json.load(open(str(RESULTS / "slp" / f"{src}_{year}.json")))
             ye_slp = s_data["by_year"][str(year)]
         except FileNotFoundError:
             ye_slp = None
@@ -190,7 +193,7 @@ def figure_slp(out: str = "fig_paper_slp.png"):
     print(f"Wrote {out}")
 
 
-def figure_hydesign(out: str = "fig_paper_hydesign.png"):
+def figure_hydesign(out: str = str(FIGURES / "fig_paper_hydesign.png")):
     """Hydesign-default (DoD=0.9, batched 110-h cycle-balance) vs relaxed
     (= our LP) NPV across b_E, all 6 (market, year)."""
     fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharex=True)
@@ -199,7 +202,7 @@ def figure_hydesign(out: str = "fig_paper_hydesign.png"):
     for i, (src, year) in enumerate(panels):
         ax = axes[i // 3, i % 3]
         try:
-            h = json.load(open(f"results_hydesign/{src}_{year}.json"))
+            h = json.load(open(str(RESULTS / "hydesign" / f"{src}_{year}.json")))
             ye = h["by_year"][str(year)]
         except FileNotFoundError:
             ax.axis("off"); continue
@@ -260,10 +263,10 @@ def figure_hydesign(out: str = "fig_paper_hydesign.png"):
 
 
 # -----------------------------------------------------------------------------
-# Imbalance-penalty sweep from results_imbalance/dk1_*.json
+# Imbalance-penalty sweep from ../results/imbalance/dk1_*.json
 # -----------------------------------------------------------------------------
-def figure_imbalance(out: str = "fig_paper_imbalance.png"):
-    files = sorted(glob.glob("results_imbalance/dk1_*.json"))
+def figure_imbalance(out: str = str(FIGURES / "fig_paper_imbalance.png")):
+    files = sorted(glob.glob(str(RESULTS / "imbalance" / "dk1_*.json")))
     if not files:
         print("no results_imbalance files; skipping")
         return

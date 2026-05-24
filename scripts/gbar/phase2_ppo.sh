@@ -46,7 +46,7 @@ source "$VENV/bin/activate"
 python3 -c "import numpy, scipy, cvxpy, torch, stable_baselines3, gymnasium; print('[gbar] imports OK')"
 
 # 3. Run training + benchmark
-python3 -u phase2_ppo.py \
+python3 -u rl_elm/phase2_ppo.py \
     --total_timesteps 1000000 \
     --n_envs 4 \
     --no_subproc \

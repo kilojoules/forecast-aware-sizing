@@ -1,6 +1,6 @@
 # battery_gym
 
-**BLUF.** Academic battery sizing tools (DTU hydesign, NREL REopt, PyPSA) embed deterministic-LP inner dispatch; commercial operators (Tesla Autobidder, Fluence Mosaic, Wärtsilä GEMS) use stochastic optimization. We test whether the academic shortcut produces the wrong capacity recommendation. **Answer: no in the pure-merchant limit (argmax invariance survives 17 of 18 regimes on DK1 + ERCOT, 2021-2023); yes once an imbalance penalty $\lambda$ on wind-forecast error exceeds a market-specific break-point $\lambda^* \approx 100$ EUR/MWh on every DK1 year tested, where single-forecast policies size $b_E^* = 24$ MWh and a 4-member ensemble fits at $b_E^* = 16$ MWh.** Full writeup in `paper.pdf` (16 pages, workshop submission).
+**BLUF.** Academic battery sizing tools (DTU hydesign, NREL REopt, PyPSA) embed deterministic-LP inner dispatch; commercial operators (Tesla Autobidder, Fluence Mosaic, Wärtsilä GEMS) use stochastic optimization. We test whether the academic shortcut produces the wrong capacity recommendation. **Answer: no in the pure-merchant limit (argmax invariance survives 17 of 18 regimes on DK1 + ERCOT, 2021-2023); yes once an imbalance penalty $\lambda$ on wind-forecast error exceeds a market-specific break-point $\lambda^* \approx 100$ EUR/MWh on every DK1 year tested, where single-forecast policies size $b_E^* = 24$ MWh and a 4-member ensemble fits at $b_E^* = 16$ MWh.** Full writeup in `paper/paper.pdf` (16 pages, workshop submission).
 
 ## Heilmeier Catechism
 
@@ -31,27 +31,53 @@
 | Imbalance-penalty break-point (5 MW wind + 1 MW battery, DK1) | $\lambda^* \approx 100$ EUR/MWh on **all 3 years**; single $24$ MWh, ensemble $16$ MWh |
 | Operational stochastic-dispatch realized-NPV uplift at $b_E^*$ | **9–34%** across (market, year) |
 
+## Repo layout
+
+```
+battery_gym/
+├── paper/              workshop paper source + figures
+│   ├── paper.tex
+│   ├── paper.pdf
+│   └── figures/        fig_paper_*.png  (referenced via \graphicspath)
+├── sizing/             workshop paper code (flat package)
+│   ├── env.py, arbitrage_agents.py, b_sat_classifier.py
+│   ├── dk_loader.py, ercot_loader.py, price_signal.py, spectrum.py
+│   ├── hydesign_merchant_fork.py, hydesign_local_check.py
+│   ├── paper_benchmark.py, paper_2d_task.py, paper_quantile.py,
+│   ├── paper_slp.py, paper_timeseries.py, paper_hydesign.py,
+│   ├── paper_imbalance.py, paper_stress_figures.py, paper_figures.py
+│   └── sanity_*.py
+├── rl_elm/             prior project: degradation-aware RL (see below)
+├── results/            tracked JSON outputs (2d/, quantile/, slp/,
+│                       hydesign/, imbalance/, main/, gbar/)
+├── scripts/lumi/       Slurm submission scripts (2d, quantile, slp, run)
+├── scripts/gbar/       LSF (DTU gbar) scripts
+├── docs/memos/         design + kill memos
+├── docs/preregistrations/  pre-registered amendments
+├── tests/              pytest entry points
+├── data/               raw market data (gitignored cache)
+└── README.md, pixi.toml
+```
+
 ## Reproduce
 
 ```bash
 pixi install
 # Workshop paper §4 (main invariance test)
-pixi run python paper_benchmark.py
+pixi run python sizing/paper_benchmark.py
 # §4.6 hydesign-default off-the-shelf baseline
-pixi run python paper_hydesign.py --source dk1 --year 2022 \
-    --out results_hydesign/dk1_2022.json
+pixi run python sizing/paper_hydesign.py --source dk1 --year 2022 \
+    --out results/hydesign/dk1_2022.json
 # §5.2 imbalance-penalty break-point
-pixi run python paper_imbalance.py --year 2022 \
-    --out results_imbalance/dk1_2022.json
-# All figures
-pixi run python paper_stress_figures.py
-# Compile paper.pdf
-pdflatex paper.tex
+pixi run python sizing/paper_imbalance.py --year 2022 \
+    --out results/imbalance/dk1_2022.json
+# All paper figures (writes into paper/figures/)
+pixi run python sizing/paper_stress_figures.py
+# Compile paper.pdf  (graphicspath = {figures/})
+cd paper && pdflatex paper.tex
 ```
 
-LUMI stress tests (§4-§5): `sbatch lumi_2d.sh`, `lumi_quantile.sh`, `lumi_slp.sh`.
-
-Benchmark + four dispatch policies + multi-lag ensemble + sizing harness + ERCOT + DK1 loaders ship in this repo.
+LUMI stress tests (§4-§5): `sbatch scripts/lumi/2d.sh`, `scripts/lumi/quantile.sh`, `scripts/lumi/slp.sh`. gbar (DTU): `scripts/gbar/run.sh deploy`.
 
 ---
 
@@ -81,8 +107,8 @@ Reinforcement Learning"* (arXiv:2601.22865v2). Self-contained below.
 
 ```bash
 pip install rainflow numpy matplotlib
-python3 run.py --B 2 3 --c 2 3 --d 2 3 --T 100000
-python3 plot_results.py results.json fig_dod.png
+python3 rl_elm/run.py --B 2 3 --c 2 3 --d 2 3 --T 100000
+python3 rl_elm/plot_results.py results.json fig_dod.png
 ```
 
 ### Validation outcome (B=(2,3), c=d=(2,3), T=10^5, 3 signal seeds: 42, 7, 123)
@@ -183,7 +209,7 @@ Greedy's is one proxy-reward formula evaluation. They scale identically in N.
 ### Headline (one command, ~5 min on a laptop)
 
 ```bash
-pixi run python repro.py
+pixi run python rl_elm/repro.py
 ```
 
 Trains ELM-RL on B=(10,100) heterogeneous fleet, then plots per-battery DoD

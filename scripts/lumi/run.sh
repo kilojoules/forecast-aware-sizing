@@ -55,7 +55,7 @@ EPS_DECAY=${EPS_DECAY:-1e-5}
 
 echo "Task $SLURM_ARRAY_TASK_ID: B=($B1,$B2) c=($c1,$c2) d=($d1,$d2) T=$T hidden=$HIDDEN seed=$SEED"
 
-pixi run python run.py \
+pixi run python rl_elm/run.py \
     --B $B1 $B2 --c $c1 $c2 --d $d1 $d2 \
     --T $T \
     --seed $SEED \

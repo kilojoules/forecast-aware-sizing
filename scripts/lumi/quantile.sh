@@ -14,10 +14,10 @@
 # 6 array tasks: (dk1, ercot) x (2021, 2022, 2023)
 set -e
 cd /scratch/project_465002609/julian/battery_gym
-mkdir -p logs results_quantile
+mkdir -p logs results/quantile
 SOURCES=(dk1 dk1 dk1 ercot ercot ercot)
 YEARS=(2021 2022 2023 2021 2022 2023)
 src=${SOURCES[$SLURM_ARRAY_TASK_ID]}
 year=${YEARS[$SLURM_ARRAY_TASK_ID]}
-pixi run python -u paper_quantile.py --source $src --year $year \
-    --out results_quantile/${src}_${year}.json
+pixi run python -u sizing/paper_quantile.py --source $src --year $year \
+    --out results/quantile/${src}_${year}.json

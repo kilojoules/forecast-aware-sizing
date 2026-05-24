@@ -16,6 +16,6 @@
 
 set -e
 cd /scratch/project_465002609/julian/battery_gym
-mkdir -p logs results_2d
-pixi run python -u paper_2d_task.py --task_id ${SLURM_ARRAY_TASK_ID} \
-    --out_dir results_2d
+mkdir -p logs results/2d
+pixi run python -u sizing/paper_2d_task.py --task_id ${SLURM_ARRAY_TASK_ID} \
+    --out_dir results/2d

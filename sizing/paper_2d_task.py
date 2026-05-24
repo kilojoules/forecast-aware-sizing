@@ -78,7 +78,8 @@ def dispatch(realized, fc, b_E, b_P, cost, mu_or_alpha, ensemble=False):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--task_id", type=int, required=True)
-    p.add_argument("--out_dir", default="results_2d")
+    p.add_argument("--out_dir",
+                   default=str(Path(__file__).resolve().parent.parent / "results" / "2d"))
     args = p.parse_args()
 
     n_be = len(B_E_GRID)

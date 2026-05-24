@@ -11,7 +11,7 @@ Three possible outcomes:
 
 Run as:
     cd /tmp && conda run -n topfarm-env python \
-      /Users/julianquick/portfolio_copy/battery_gym/hydesign_local_check.py
+      /Users/julianquick/portfolio_copy/battery_gym/sizing/hydesign_local_check.py
 (Run from /tmp so the local `hydesign/` checkout doesn't shadow the installed
 package at /Users/julianquick/hydesign.)
 """
@@ -25,14 +25,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BG = "/Users/julianquick/portfolio_copy/battery_gym"
-sys.path.insert(0, BG)
+SIZING_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SIZING_DIR)
 os.chdir("/tmp")  # avoid hydesign namespace shadowing
 
 from hydesign.ems.ems import ems_cplex_parts  # noqa: E402
 
 # Pull data via our loader
-sys.path.insert(0, BG)
 from dk_loader import load_dk_year  # noqa: E402
 from arbitrage_agents import (lp_linear_actions, qp_quadratic_actions,  # noqa
                               run_actions)
@@ -179,8 +178,10 @@ def main():
     print(f"\n>>> {verdict} <<<")
     out["verdict"] = verdict
 
-    Path(BG, "hydesign_local_check_out.json").write_text(json.dumps(out, indent=2))
-    print(f"\nWrote {BG}/hydesign_local_check_out.json")
+    out_path = os.path.join(SIZING_DIR, "..", "results", "hydesign",
+                             "hydesign_local_check_out.json")
+    Path(out_path).write_text(json.dumps(out, indent=2))
+    print(f"\nWrote {out_path}")
 
 
 if __name__ == "__main__":
