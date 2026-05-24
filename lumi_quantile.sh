@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=24G
 #SBATCH --time=06:00:00
-#SBATCH --array=0-5
+#SBATCH --array=0-5%2
 #SBATCH --output=logs/q_%A_%a.out
 #SBATCH --error=logs/q_%A_%a.err
 #SBATCH --job-name=batt_q

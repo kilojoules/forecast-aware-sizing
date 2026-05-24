@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage[round]{natbib}
 \usepackage{xcolor}
+\usepackage{eurosym}
 
 \hypersetup{colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue}
 
@@ -19,7 +20,7 @@ A regime-classification diagnostic}
 \maketitle
 
 \begin{abstract}
-Tesla Autobidder, Fluence Mosaic, and W\"{a}rtsil\"{a} GEMS run battery dispatch on machine-learning-driven stochastic optimization. NREL REopt, DTU \texttt{hydesign}, and most academic hybrid-power-plant sizing tools embed deterministic LP inner dispatch. Should sizing tools change architecture? We propose a practitioner-runnable regime-classification diagnostic --- the $b_{\mathrm{sat}}^{\epsilon}$ overlap test --- that any operator can compute on one year of price data to answer the question for their own market. The diagnostic returns ``invariance survives'' on synthetic AR(1), all three years of Danish DK1 (Energinet, including the 2022 European energy crisis with max \euro 871/MWh), and all three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri with sustained \$9000/MWh price-cap hours). Despite stochastic dispatch yielding $9$--$34\%$ realized-NPV uplift at the optimum, the optimal battery energy capacity $b_E^*$ is invariant across deterministic vs.\ multi-lag-ensemble dispatch in every (market, year, cost-form) configuration tested. We sketch a theoretical proposition motivating the diagnostic, then test its prediction empirically: it predicted that multi-day spectral content should break invariance; the data falsify the prediction. The empirical answer is broader than the theory anticipated. We release the benchmark (\texttt{battery\_gym}) and the diagnostic for replication on any market.
+Tesla Autobidder, Fluence Mosaic, and W\"{a}rtsil\"{a} GEMS run battery dispatch on machine-learning-driven stochastic optimization. NREL REopt, DTU \texttt{hydesign}, and most academic hybrid-power-plant sizing tools embed deterministic LP inner dispatch. Should sizing tools change architecture? We propose a practitioner-runnable regime-classification diagnostic --- the $b_{\mathrm{sat}}^{\epsilon}$ overlap test --- that any operator can compute on one year of price data to answer the question for their own market. The diagnostic returns ``invariance survives'' on synthetic AR(1), all three years of Danish DK1 (Energinet, including the 2022 European energy crisis with max \euro 871/MWh), and all three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri with sustained \$9000/MWh price-cap hours). Despite stochastic dispatch yielding $9$--$34\%$ realized-NPV uplift at the optimum, the optimal battery energy capacity $b_E^*$ is invariant across deterministic vs.\ multi-lag-ensemble dispatch in every (market, year, cost-form) configuration tested at $\lambda = 0$ (the pure-merchant limit). We sketch a theoretical proposition motivating the diagnostic, then test its prediction empirically: it predicted that multi-day spectral content should break invariance; the data falsify the prediction. Extending the model to a 5-MW wind + 1-MW battery HPP with imbalance settlement at penalty $\lambda$ EUR/MWh on residual wind-forecast error recovers a break-point at $\lambda^* \approx 100$ EUR/MWh on all three DK1 years (single-forecast sizing $b_E^* = 24$ MWh vs.\ ensemble $b_E^* = 16$ MWh), conditional on the wind/battery ratio. We release the benchmark (\texttt{battery\_gym}) and the diagnostic for replication on any market.
 \end{abstract}
 
 \section{Introduction}
@@ -46,7 +47,7 @@ Under the persistence-ensemble baseline, the diagnostic returns ``invariance sur
 
 Pre-registered protocol locks all design choices before data touch (commits 2ce93ae, ebb035c, 0b5c9f1; see \texttt{PREREGISTRATION\_*.md}).
 
-\section{Setup}
+\section{Setup}\label{sec:setup}
 
 \subsection{Environment and dispatch}
 
@@ -285,6 +286,39 @@ holds at the quantile-regression-ensemble level for the most-stressed
 regime --- consistent with the diagnostic correctly classifying
 ``disjoint'' under richer forecasts and harder regimes.
 
+\subsection{Hydesign-default off-the-shelf baseline}\label{sec:hydesign}
+
+Our merchant-arbitrage formulation collapses to hydesign's deterministic perfect-foresight EMS LP \citep{hydesign} once a single structural constraint is relaxed: hydesign's grid-export non-negativity $P_{\mathrm{HPP}} \ge 0$ blocks pure grid-charging, the operating mode required for a merchant battery. A minimal local fork (single bound change, no other modifications) allows bidirectional grid. With that change plus matched operational parameters (depth-of-discharge $= 1$, no terminal-SoC constraint, $\eta = 1$, no peak-hour or cycling penalty), the hydesign LP and our LP produce identical dispatch on a 96-hour DK1 2022 cell: action correlation $1.0000$, revenue agreement to $0.000\%$. The two LPs are mathematically equivalent on the merchant-battery problem.
+
+The interesting comparison is therefore not equivalence-under-equivalent-constraints, but the cost of \emph{off-the-shelf} use: applying hydesign's default operational constraints to merchant battery sizing without modification. Hydesign's defaults are inherited from renewable-coupled HPP design --- depth-of-discharge $0.9$ (SoC restricted to $[0.1\,b_E, b_E]$) and 110-hour batched dispatch with terminal-SoC equality at $0.5\,b_E$ (implicit short-horizon cycle balance). Both are reasonable for renewable-firming applications, conservative for merchant arbitrage.
+
+Figure~\ref{fig:hydesign} compares hydesign-default to the unrestricted LP across all 6 (market, year) pairs and the full $b_E$ grid. For small batteries ($b_E \le 8$ MWh) the gap is a uniform $11$--$18\%$ revenue penalty from depth-of-discharge alone. For larger batteries the batched cycle-balance constraint binds increasingly hard --- a 64-MWh battery cannot exploit multi-batch arbitrage when each 110-hour window must return to $0.5\,b_E$ --- and the gap widens to $30$--$65\%$. Hydesign-default revenue \emph{plateaus} above $b_E \sim 32$ MWh because the cycle-balance constraint caps energy throughput per batch independent of capacity. The unrestricted LP keeps scaling.
+
+The argmax $b_E^*$ shifts in 2 of 6 regimes under hydesign-default operational conservatism. Hydesign-default chooses $b_E^* = 8$ MWh in every (market, year). The unrestricted LP agrees ($b_E^* = 8$ MWh) on $4$ regimes (DK1 2021, DK1 2023, ERCOT 2022, ERCOT 2023) but shifts upward on DK1 2022 ($b_E^* = 32$ MWh) and ERCOT 2021 ($b_E^* = 16$ MWh). The NPV gap at each policy's own argmax ranges $5.5$--$35.9\%$ across regimes (table~\ref{tab:hydesign}). Both the sizing-shift and the NPV gap are calibration consequences of using HPP-renewable-firming defaults for a different physical use case; neither contradicts hydesign's intended scope. The point is that the deterministic-vs-stochastic-dispatch question studied in \S\ref{sec:results}--\S\ref{sec:stress} is a second-order effect compared to the first-order cost of using renewable-firming operational defaults for merchant arbitrage.
+
+\begin{table}[t]
+\centering
+\caption{\label{tab:hydesign}Hydesign-default (off-the-shelf) vs unrestricted LP at each policy's NPV argmax. ``Shift'' marks regimes where $b_E^*$ differs.}
+\begin{tabular}{llrrrrrl}
+\toprule
+Market & Year & $b_E^*$ (def) & NPV (def) & $b_E^*$ (rel) & NPV (rel) & NPV gap & \\
+\midrule
+DK1     & 2021 & 8  & 0.51M & 8  & 0.80M & $+35.9\%$ & \\
+DK1     & 2022 & 8  & 2.48M & 32 & 3.78M & $+34.4\%$ & shift \\
+DK1     & 2023 & 8  & 0.70M & 8  & 0.99M & $+29.2\%$ & \\
+ERCOT N. & 2021 & 8  & 1.36M & 16 & 2.13M & $+35.9\%$ & shift \\
+ERCOT N. & 2022 & 8  & 1.00M & 8  & 1.21M & $+17.5\%$ & \\
+ERCOT N. & 2023 & 8  & 2.19M & 8  & 2.32M & $+5.5\%$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_paper_hydesign.png}
+\caption{\label{fig:hydesign}Hydesign-default operational constraints (red circles, DoD$=0.9$ + 110-h batched cycle balance) vs unrestricted LP (blue squares). Dotted lines: NPV argmax per policy. Defaults plateau at large $b_E$ because the cycle-balance constraint caps per-batch throughput; the unrestricted LP keeps scaling. $b_E^*$ shifts in 2 of 6 regimes; NPV gap at each policy's own argmax ranges $5.5$--$35.9\%$ (table~\ref{tab:hydesign}).}
+\end{figure}
+
 \subsection{Charge/discharge pattern on the spike week}
 
 Figure~\ref{fig:timeseries} shows all four policies on the DK1 2022 spike week (containing the year's max price \euro 871/MWh on 2022-09-01, around a low-wind period visible in the resource panel). The dispatch decisions are visually nearly identical across policies, confirming the empirical similarity that the diagnostic measures.
@@ -307,9 +341,34 @@ We had a theoretical reason to expect DK1 and ERCOT spectral content to break in
 \item \textbf{Forecast resolution at long timescales is uniformly bad.} If both single and ensemble policies fail at multi-day timescales, neither captures multi-day arbitrage; bigger batteries help neither. Improving forecasts at long timescales (probabilistic ML weather forecasts) might expose a sizing shift this study did not detect.
 \end{itemize}
 
+\subsection{Imbalance-penalty extension: when forecast quality drives sizing}\label{sec:imbalance}
+
+The arbitrage MDP of \S\ref{sec:setup} prices forecast errors at zero: the policy commits actions from its forecast and is paid at realized DA prices, with no settlement of the deviation between scheduled and delivered. This is faithful to a pure-merchant battery on a single DA market, but it removes one mechanism --- imbalance settlement at real-time / regulation prices --- by which forecast quality is known to drive sizing in coupled wind+battery configurations. To probe this mechanism we step outside the pure-merchant setting of \S\ref{sec:setup}--\S\ref{sec:stress} and couple the battery to a wind plant; the §4 result on merchant arbitrage stands at $\lambda = 0$.
+
+We extend the model by colocating the battery with a $W_{\mathrm{peak}}$-MW-peak DK1 wind plant (system MWh scaled so peak hour delivers $W_{\mathrm{peak}}$ MW), and add imbalance settlement at penalty $\lambda$ EUR/MWh on the residual after the battery absorbs wind forecast error within available headroom. Reported results use $W_{\mathrm{peak}} = 5$ MW (typical HPP overbuild relative to a $1$ MW battery); the break-point $\lambda^*$ scales inversely with the wind/battery capacity ratio --- at $W_{\mathrm{peak}} = 1$ MW the imbalance gradient is too small to shift argmax at any tested $\lambda$, at $W_{\mathrm{peak}} \gg 5$ MW $\lambda^*$ falls into the normal-DA-spread band. The DA commitment is $a_{\mathrm{sched},t} + \hat{w}_t$ from each policy's price + wind forecast. At delivery, realized wind $w_t$ is known; the battery deviates by $\Delta a_t$ to absorb the wind error within power and SoC bounds. Imbalance residual $r_t = (w_t - \hat{w}_t) + \Delta a_t$ is settled at $-\lambda |r_t|$. Wind forecasts use the same multi-lag persistence structure as price forecasts (single = lag 24h, ensemble = mean over lags $\{24, 48, 168, 336\}$ h). We sweep $\lambda \in \{0, 10, 25, 50, 100, 200, 500\}$ EUR/MWh against the full $b_E$ grid for three DK1 years.
+
+Figure~\ref{fig:imbalance} (top row) shows $b_E^*$ vs $\lambda$ per policy. At $\lambda = 0$, argmax invariance holds (consistent with \S\ref{sec:results}--\S\ref{sec:stress}): $b_E^* = 4$ MWh in DK1 2021 and 2023, $b_E^* = 8$ MWh in DK1 2022, identical across policies. Forecast quality is irrelevant for sizing below $\lambda \approx 10$ EUR/MWh on every year tested.
+
+Three break-points are visible:
+\begin{itemize}
+\item $\lambda \approx 25$ EUR/MWh: first divergence in DK1 2021 (ensemble shifts $4 \to 8$ before single) and DK1 2023 (single shifts $4 \to 8$ before ensemble). The direction differs across years and is sensitive to the policy-specific trade-off between SoC used for arbitrage versus available for absorption. DK1 2022 still invariant.
+\item $\lambda \approx 100$ EUR/MWh: \emph{the same argmax positions appear in all three years.} Single-forecast $b_E^* = 24$ MWh; ensemble $b_E^* = 16$ MWh. The ensemble's tighter wind-forecast error (mean $|w - \hat{w}|$ approximately $0.96$ versus $1.00$ MW in 2022, $0.97$ versus $1.01$ in 2021, $1.06$ versus $1.10$ in 2023) lets it operate the same residual-imbalance regime with one-third less storage capacity. The NPV preference is shallow in DK1 2022 (the wrong-policy choice costs $0.3$--$0.8\%$ of best NPV --- effectively a tie) but more substantive in DK1 2021 and 2023 ($2.5$--$4.0\%$). The diagnostic registers a real argmax difference; the operational cost of misclassification depends on the year.
+\item $\lambda \geq 200$ EUR/MWh: argmaxes converge upward (both at $b_E^* = 32$ MWh at $\lambda = 200$, $b_E^* = 48$ MWh at $\lambda = 500$). At extreme penalties the absorption gradient w.r.t.\ $b_E$ dominates the policy difference, and both policies size up together.
+\end{itemize}
+
+The takeaway is that \emph{forecast quality drives sizing at intermediate $\lambda$}, not at low $\lambda$ (where the absorption value is dwarfed by arbitrage revenue and CAPEX) and not at high $\lambda$ (where every policy needs maximum absorption). The diagnostic that fires is: \emph{measure $\lambda^* (=$ smallest $\lambda$ at which $b_E^*(\mathrm{single}) \neq b_E^*(\mathrm{ensemble}))$ for your market; if $\lambda^*$ is below your operational regime, deterministic-LP-inner sizing is robust; if above, it is not.}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{fig_paper_imbalance.png}
+\caption{\label{fig:imbalance}Imbalance-penalty break-point study (DK1, 5-MW-peak wind + 1-MW battery). Top row: $b_E^*$ vs $\lambda$ for single-forecast (blue circles) and K=4 multi-lag ensemble (orange squares) policies. At $\lambda = 0$ argmax invariance holds; at $\lambda = 100$ EUR/MWh the same pattern appears in every year (single $24$ MWh, ensemble $16$ MWh); at $\lambda \geq 200$ both shift upward together. Bottom row: NPV curves at $\lambda = 100$ (the universal break-point); dotted verticals mark each policy's argmax, showing the $24/16$ MWh gap visually. Ensemble dominates NPV by $0.3$--$1.3$M\euro\ at its argmax.}
+\end{figure}
+
+The break-point $\lambda^*$ where single and ensemble $b_E^*$ diverge is the diagnostic for whether forecast quality drives sizing in a given market. The $\lambda = 0$ result of \S\ref{sec:results}--\S\ref{sec:stress} is the pure-merchant limit; real markets sit at $\lambda > 0$. Danish BRP imbalance prices typically span $[10, 50]$ EUR/MWh against DA in normal hours and exceed $200$ EUR/MWh in stressed hours \citep{energinet2024}; the relevant regime depends on the asset's contractual position relative to the DA-BRP-RT cascade.
+
 \subsection{Implication for sizing tools}
 
-Across the markets and regimes tested, deterministic-LP-inner-dispatch in academic sizing tools (\texttt{hydesign}, \texttt{REopt}, \texttt{PyPSA}) is empirically robust on capacity recommendations. Operational stochastic dispatch is independently justified by the $9$--$34\%$ realized-NPV uplift at the recommended capacity. The architectural divergence between commercial operational platforms and academic sizing tools is empirically supported on both DK1 and ERCOT --- not naive.
+Across the markets and regimes tested, deterministic-LP-inner-dispatch in academic sizing tools (\texttt{hydesign}, \texttt{REopt}, \texttt{PyPSA}) is empirically robust on capacity recommendations \emph{at $\lambda = 0$}. Operational stochastic dispatch is independently justified by the $9$--$34\%$ realized-NPV uplift at the recommended capacity. The $\lambda$-sweep of \S\ref{sec:imbalance} characterizes the regime where this conclusion is conditional: the imbalance cost gradient w.r.t.\ $b_E$ eventually dominates the deterministic-LP-vs-stochastic distinction, at $\lambda$ values that depend on wind sizing and forecast quality. The architectural divergence between commercial operational platforms and academic sizing tools is empirically supported on both DK1 and ERCOT --- not naive --- but its robustness is conditional on which side of $\lambda^*$ a given market sits.
 
 \subsection{Limitations}
 
@@ -375,6 +434,9 @@ Weron, R.\ (2014). Electricity price forecasting: a review of the state-of-the-a
 
 \bibitem[Xu, 2018]{xu2018modeling}
 Xu, B.\ (2018). \emph{Modeling and Control of Energy Storage Systems for Power System Operations}. PhD thesis, University of Washington.
+
+\bibitem[Murcia Le\'on et~al., 2024]{hydesign}
+Murcia Le\'on, J.~P., et~al.\ (2024). \emph{HyDesign: a tool for design and control of utility-scale wind-solar-storage based hybrid power plants}. DTU Wind Energy. \url{https://topfarm.pages.windenergy.dtu.dk/hydesign/}
 
 \end{thebibliography}
 

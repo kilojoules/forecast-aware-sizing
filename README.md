@@ -1,10 +1,67 @@
 # battery_gym
 
+**BLUF.** Academic battery sizing tools (DTU hydesign, NREL REopt, PyPSA) embed deterministic-LP inner dispatch; commercial operators (Tesla Autobidder, Fluence Mosaic, Wärtsilä GEMS) use stochastic optimization. We test whether the academic shortcut produces the wrong capacity recommendation. **Answer: no in the pure-merchant limit (argmax invariance survives 17 of 18 regimes on DK1 + ERCOT, 2021-2023); yes once an imbalance penalty $\lambda$ on wind-forecast error exceeds a market-specific break-point $\lambda^* \approx 100$ EUR/MWh on every DK1 year tested, where single-forecast policies size $b_E^* = 24$ MWh and a 4-member ensemble fits at $b_E^* = 16$ MWh.** Full writeup in `paper.pdf` (16 pages, workshop submission).
+
+## Heilmeier Catechism
+
+**What are we trying to do?** Tell a battery developer whether their sizing tool's perfect-foresight-LP assumption is good enough on their specific market — without making them rerun the whole sizing exercise under a stochastic dispatcher.
+
+**How is it done today.** Two camps. Academic sizing tools (hydesign, REopt, PyPSA) call a deterministic LP inner solver $10^3$–$10^4$ times per design evaluation; switching to a stochastic LP costs $100$–$1000\times$ more compute per evaluation. Commercial operators run ML-driven stochastic optimization at dispatch time (tens of GW deployed). Two communities, two architectures, no empirical test of whether the academic shortcut affects the capacity recommendation it produces.
+
+**What is new.** (1) A practitioner-runnable regime-classification diagnostic — the $b_{\mathrm{sat}}^{\epsilon}$ overlap test — computable on one year of price data; returns {invariance survives, disjoint, inconclusive}. (2) First empirical sweep comparing deterministic-LP vs.\ stochastic dispatch sizing on DK1 + ERCOT North Hub, 2021-2023, with three orthogonal LUMI HPC stress tests (2-D $(b_E, b_P)$ surface, K=20 quantile-regression ensemble, N=50 scenario SLP). (3) Off-the-shelf-cost characterization of hydesign defaults applied to a merchant battery. (4) Imbalance-penalty extension that recovers a forecast-quality-dependent break-point in sizing.
+
+**Who cares.** Anyone running hydesign / REopt / PyPSA for grid-tied battery sizing (40+ GW of hybrid-power-plant projects in pipeline use these tools). Knowing whether your market sits below or above $\lambda^*$ tells you whether your deterministic-LP sizing answer is robust or off by $\sim 50\%$ on capacity.
+
+**Risks.** (1) Persistence ensemble is a weak stochastic baseline; richer forecasts can break invariance — partially confirmed by quantile-regression ensemble on DK1 2022. (2) Only DK1 + ERCOT North Hub tested; CAISO, PJM, Nord Pool intraday have different structure. (3) Imbalance break-point $\lambda^*$ scales inversely with wind/battery capacity ratio (caveated in paper).
+
+**Cost.** Diagnostic runs on a laptop in minutes. Stress tests $\sim 50$ node-h on LUMI HPC (research allocation, no marginal cost).
+
+**Time.** Six months: pre-registered design, dataset acquisition (Energinet + gridstatus), four dispatch policies, three stress tests, hydesign baseline integration, imbalance-penalty extension, paper write-up. Workshop draft ready for submission.
+
+**Mid-term exam.** Diagnostic returns "invariance survives" on synthetic AR(1) where invariance must hold by construction. ✓
+**Final exam.** Diagnostic correctly fires "disjoint" on the one stress-test regime (of 18) where sizing actually shifts (DK1 2022 quantile ensemble). ✓ Imbalance break-point $\lambda^*$ reproducible across years (3/3 DK1 years agree on $\lambda^* \approx 100$). ✓
+
+## Headline results
+
+| Test | Result |
+|---|---|
+| Argmax invariance, persistence ensemble, 6 (market, year) | **6/6 survive** at $\lambda=0$ |
+| Argmax invariance, 3 LUMI stress tests × 6 regimes (18 total) | **17/18 survive**; DK1 2022 quantile-K=20 breaks |
+| Hydesign-default operational constraints vs unrestricted LP | **5.5–35.9% NPV gap** at argmax; $b_E^*$ shifts 2/6 regimes |
+| Imbalance-penalty break-point (5 MW wind + 1 MW battery, DK1) | $\lambda^* \approx 100$ EUR/MWh on **all 3 years**; single $24$ MWh, ensemble $16$ MWh |
+| Operational stochastic-dispatch realized-NPV uplift at $b_E^*$ | **9–34%** across (market, year) |
+
+## Reproduce
+
+```bash
+pixi install
+# Workshop paper §4 (main invariance test)
+pixi run python paper_benchmark.py
+# §4.6 hydesign-default off-the-shelf baseline
+pixi run python paper_hydesign.py --source dk1 --year 2022 \
+    --out results_hydesign/dk1_2022.json
+# §5.2 imbalance-penalty break-point
+pixi run python paper_imbalance.py --year 2022 \
+    --out results_imbalance/dk1_2022.json
+# All figures
+pixi run python paper_stress_figures.py
+# Compile paper.pdf
+pdflatex paper.tex
+```
+
+LUMI stress tests (§4-§5): `sbatch lumi_2d.sh`, `lumi_quantile.sh`, `lumi_slp.sh`.
+
+Benchmark + four dispatch policies + multi-lag ensemble + sizing harness + ERCOT + DK1 loaders ship in this repo.
+
+---
+
+## Prior work in this repo: RL-ELM degradation-aware regulation
+
 Reproduction of Srinivasa, Deulkar, Bhargava, Hajiesmaili, Shenoy 2026,
 *"Degradation-Aware Frequency Regulation of a Heterogeneous Battery Fleet via
-Reinforcement Learning"* (arXiv:2601.22865v2).
+Reinforcement Learning"* (arXiv:2601.22865v2). Self-contained below.
 
-## Files
+### Files
 
 - `env.py` — fleet MDP env. Per-battery ramp + capacity (eq 1, 3), collective
   regulation tracking (eq 6), deterministic SoC update (eq 2), online rainflow
@@ -20,7 +77,7 @@ Reinforcement Learning"* (arXiv:2601.22865v2).
   accumulated reward + per-battery rainflow degradation + DoD histogram.
 - `plot_results.py` — DoD histogram (Fig 2-style).
 
-## Reproduce
+### Reproduce
 
 ```bash
 pip install rainflow numpy matplotlib
@@ -28,7 +85,7 @@ python3 run.py --B 2 3 --c 2 3 --d 2 3 --T 100000
 python3 plot_results.py results.json fig_dod.png
 ```
 
-## Validation outcome (B=(2,3), c=d=(2,3), T=10^5, 3 signal seeds: 42, 7, 123)
+### Validation outcome (B=(2,3), c=d=(2,3), T=10^5, 3 signal seeds: 42, 7, 123)
 
 | Agent     | Reward             | D₁              | D₂              | D₁+D₂           |
 |-----------|-------------------:|----------------:|----------------:|----------------:|
@@ -67,7 +124,7 @@ What does **not** match the paper:
   pin down the units convention (δ as fraction vs. percent); the unspecified
   Markov transition matrix for the toy signal also differs from theirs.
 
-## Implementation note: SP-update timing
+### Implementation note: SP-update timing
 
 Eq (9) reads `r(t) = -(α e^{β|b(t)+a(t)-b_SP(t)|} - α e^{β|b(t)-b_SP(t)|})`.
 A literal "compute reward, then update SP" ordering is **gameable**: after a
@@ -85,7 +142,7 @@ every step of full-amplitude oscillation costs `α(e^{β·B}−1)`; depth-1
 oscillation costs `α(e^β−1)` per step; no motion costs 0. RL prefers shallow
 cycles. `env.step()` and `agents.proxy_reward_for_action()` use this ordering.
 
-## Files produced
+### Files produced
 
 - `results.json` — per-agent metrics + full SoC traces from the latest run.
 - `fig_dod_tuned.png` — DoD histograms equivalent to paper Fig 2.
@@ -97,7 +154,7 @@ cycles. `env.step()` and `agents.proxy_reward_for_action()` use this ordering.
 
 Regenerate the last four with `python plot_all.py` (uses cached run artifacts).
 
-## Honest framing
+### Honest framing
 
 ELM-RL is, in practice, a **smooth function-approximator copy of Greedy** on
 this proxy reward. Action-match analysis (`action_match.py`) shows ELM picks
@@ -123,7 +180,7 @@ Note that ELM does **not** beat Greedy on compute either: both enumerate
 feasible actions per state. ELM's per-action cost is one ELM forward pass;
 Greedy's is one proxy-reward formula evaluation. They scale identically in N.
 
-## Headline (one command, ~5 min on a laptop)
+### Headline (one command, ~5 min on a laptop)
 
 ```bash
 pixi run python repro.py
@@ -134,7 +191,7 @@ histograms (`fig_headline.png`): Naive over-cycles the small battery (mass at
 high DoD); ELM-RL redistributes regulation across the fleet so the small
 battery stays shallow. Total degradation drops ~55% vs Naive.
 
-## Heterogeneous fleet result
+### Heterogeneous fleet result
 
 Symmetric fleets (B=(N,N) with c=d) hit a structural ceiling: at large N,
 Naive's proportional allocation is near-optimal under the proxy reward, so
@@ -151,7 +208,7 @@ normalization + rich features [(b−sp), |b−sp|, sign, one-hot signal]):
 
 ELM nearly matches the analytic Greedy optimum at maximum heterogeneity.
 
-## Sanity checklist
+### Sanity checklist
 
 - [x] Closed-form sanity (`tests/sanity.py` — 11 tests, all passing). Covers
   stress-fn monotonicity, rainflow on constant / single-cycle / N-fixed-depth

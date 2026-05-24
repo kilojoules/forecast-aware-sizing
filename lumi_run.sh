@@ -9,7 +9,7 @@
 #SBATCH --mem=16G
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
-#SBATCH --array=0-9
+#SBATCH --array=0-9%2
 
 # CPU-bound numpy code; no GPU needed.
 # Array indices map to (B1,B2,c1,c2,d1,d2,seed) tuples below.

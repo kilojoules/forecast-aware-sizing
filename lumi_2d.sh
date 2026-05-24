@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
 #SBATCH --time=04:00:00
-#SBATCH --array=0-29
+#SBATCH --array=0-29%2
 #SBATCH --output=logs/2d_%A_%a.out
 #SBATCH --error=logs/2d_%A_%a.err
 #SBATCH --job-name=batt_2d

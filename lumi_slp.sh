@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
 #SBATCH --time=24:00:00
-#SBATCH --array=0-5
+#SBATCH --array=0-5%2
 #SBATCH --output=logs/slp_%A_%a.out
 #SBATCH --error=logs/slp_%A_%a.err
 #SBATCH --job-name=batt_slp
