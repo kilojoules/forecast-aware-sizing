@@ -1,6 +1,42 @@
 # battery_gym
 
-**BLUF.** Academic battery sizing tools (DTU hydesign, NREL REopt, PyPSA) embed deterministic-LP inner dispatch; commercial operators (Tesla Autobidder, Fluence Mosaic, Wärtsilä GEMS) use stochastic optimization. We test whether the academic shortcut produces the wrong capacity recommendation. **Answer: no in the pure-merchant limit (argmax invariance survives 17 of 18 regimes on DK1 + ERCOT, 2021-2023); yes once an imbalance penalty $\lambda$ on wind-forecast error exceeds a market-specific break-point $\lambda^* \approx 100$ EUR/MWh on every DK1 year tested, where single-forecast policies size $b_E^* = 24$ MWh and a 4-member ensemble fits at $b_E^* = 16$ MWh.** Full writeup in `paper/paper.pdf` (16 pages, workshop submission).
+**Forecast uncertainty changes the optimal battery size.** A single 24-h
+persistence forecast wants a 24 MWh battery; a 4-member ensemble fits
+the same job in 16 MWh — **33% less capital for 6% more NPV**
+(DK1 2022, 5 MW wind + 1 MW battery, imbalance penalty
+$\lambda = 100$ €/MWh).
+
+![NPV vs battery size, single vs ensemble forecast](paper/figures/fig_readme_npv.png)
+
+The mechanism: worse forecasts make the dispatcher over-react to
+phantom price spikes, which forces deeper SoC excursions, which the
+operator pays for by oversizing the battery to absorb the imbalance.
+A week of dispatch makes it visible:
+
+![SoC trace, single vs ensemble, DK1 2022 spike week](paper/figures/fig_readme_soc.png)
+
+Single forecast (blue) hits both rails (0 and 16 MWh) repeatedly;
+ensemble (orange) stays in the middle band. Same week, same battery,
+different forecast quality.
+
+---
+
+## Background
+
+Academic battery sizing tools (DTU hydesign, NREL REopt, PyPSA) embed
+deterministic-LP inner dispatch with point forecasts; commercial
+operators (Tesla Autobidder, Fluence Mosaic, Wärtsilä GEMS) use
+stochastic optimization. The two communities run different math on the
+same problem. Until now there was no empirical test of whether the
+academic shortcut produces the wrong **capacity** recommendation.
+
+**Answer.** In the pure-merchant limit ($\lambda = 0$, no imbalance
+settlement), argmax invariance survives **17 of 18 regimes** on DK1 and
+ERCOT North Hub, 2021-2023. Above a market-specific break-point
+$\lambda^* \approx 100$ €/MWh the answer flips: forecast quality drives
+sizing, in the same direction in all three DK1 years tested.
+
+Full writeup: `paper/paper.pdf` (16 pages, workshop submission).
 
 ## Heilmeier Catechism
 

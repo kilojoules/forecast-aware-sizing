@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA_DIR = Path(__file__).parent / "data" / "ercot"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "ercot"
 HUB = "HB_NORTH"
 
 

@@ -25,7 +25,7 @@ import pandas as pd
 import requests
 
 
-DATA_DIR = Path(__file__).parent / "data" / "dk"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "dk"
 ENERGINET_URL = "https://api.energidataservice.dk/dataset/Elspotprices"
 
 
