@@ -1,23 +1,26 @@
 # battery_gym
 
-**Forecast uncertainty changes the optimal battery size.** A single 24-h
-persistence forecast wants a 24 MWh battery; a 4-member ensemble fits
-the same job in 16 MWh — **33% less capital for 6% more NPV**
-(DK1 2022, 5 MW wind + 1 MW battery, imbalance penalty
-$\lambda = 100$ €/MWh).
+**Forecast uncertainty hits NPV through the imbalance penalty.** At
+$\lambda = 0$ (pure merchant, no settlement on energy promised but not
+delivered) the optimal battery size is invariant to forecast quality.
+Above $\lambda \approx 100$ €/MWh — typical for stressed-hour Danish
+BRP imbalance prices — the policies pick visibly different sizes.
 
-![NPV vs battery size, single vs ensemble forecast](paper/figures/fig_readme_npv.png)
+![NPV vs imbalance penalty, single vs ensemble, 3 DK1 years](paper/figures/fig_readme_npv.png)
 
-The mechanism: worse forecasts make the dispatcher over-react to
-phantom price spikes, which forces deeper SoC excursions, which the
-operator pays for by oversizing the battery to absorb the imbalance.
-A week of dispatch makes it visible:
+Shaded $\lambda$ bands mark where single-forecast and ensemble policies
+choose different argmax $b_E^*$. At the band's left edge, the ensemble's
+slightly tighter wind-forecast error lets it operate at a smaller
+battery; at the right edge, both policies converge on a larger battery
+because absorbing residual imbalance dominates the arbitrage. The mechanism is visible in the dispatch on a spike week (b_E = 16 MWh
+probe, DK1 2022):
 
 ![SoC trace, single vs ensemble, DK1 2022 spike week](paper/figures/fig_readme_soc.png)
 
 Single forecast (blue) hits both rails (0 and 16 MWh) repeatedly;
-ensemble (orange) stays in the middle band. Same week, same battery,
-different forecast quality.
+ensemble (orange) stays in the middle band. Same battery, same week,
+different forecast quality → different SoC excursions → different
+sizing optimum once those excursions cost real money.
 
 ---
 

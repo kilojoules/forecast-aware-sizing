@@ -29,40 +29,54 @@ from dk_loader import load_dk_year, multi_lag_persistence
 
 
 def figure_npv(out: Path):
-    d = json.load(open(RESULTS / "imbalance" / "dk1_2022.json"))
-    rows = d["rows"]
-    lam = 100.0
-    fig, ax = plt.subplots(figsize=(7.5, 4.2))
-    for pol, color, marker, label in [
-        ("single", "#1f77b4", "o", "single forecast (lag-24h)"),
-        ("ensemble", "#ff7f0e", "s", "ensemble (K=4 multi-lag)"),
-    ]:
-        sub = sorted(
-            [r for r in rows if r["policy"] == pol and r["lambda"] == lam],
-            key=lambda r: r["b_E"],
-        )
-        b = [r["b_E"] for r in sub]
-        npv = [r["npv"] / 1e6 for r in sub]
-        ax.plot(b, npv, "-", marker=marker, color=color, lw=2, ms=7,
-                 label=label)
-        ai = int(np.argmax(npv))
-        ax.axvline(b[ai], ls=":", color=color, alpha=0.6, lw=1.5)
-        ax.annotate(f"$b_E^* = {int(b[ai])}$ MWh\nNPV = {npv[ai]:.1f}M€",
-                     xy=(b[ai], npv[ai]),
-                     xytext=(10 if pol == "single" else -110,
-                              -25 if pol == "single" else 15),
-                     textcoords="offset points",
-                     fontsize=10, color=color,
-                     arrowprops=dict(arrowstyle="-", color=color, alpha=0.6))
-    ax.set_xscale("log")
-    ax.set_xlabel(r"battery energy capacity $b_E$ (MWh)", fontsize=11)
-    ax.set_ylabel("NPV (M€, 15-yr, 7%)", fontsize=11)
-    ax.set_title(
-        "DK1 2022 + 5-MW wind + 1-MW battery, imbalance penalty $\\lambda = 100$ €/MWh",
-        fontsize=11,
+    """NPV vs imbalance penalty lambda, optimally-sized battery per policy."""
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.2), sharey=False)
+    for ax, year in zip(axes, [2021, 2022, 2023]):
+        d = json.load(open(RESULTS / "imbalance" / f"dk1_{year}.json"))
+        rows = d["rows"]
+        lambdas = sorted({r["lambda"] for r in rows})
+        for pol, color, marker, label in [
+            ("single", "#1f77b4", "o", "single forecast (lag-24h)"),
+            ("ensemble", "#ff7f0e", "s", "ensemble (K=4 multi-lag)"),
+        ]:
+            best_npv = []
+            best_b = []
+            for lam in lambdas:
+                sub = [r for r in rows
+                       if r["policy"] == pol and r["lambda"] == lam]
+                best = max(sub, key=lambda r: r["npv"])
+                best_npv.append(best["npv"] / 1e6)
+                best_b.append(best["b_E"])
+            ax.plot(lambdas, best_npv, "-", marker=marker, color=color,
+                     lw=2, ms=7, label=label)
+        # Shade band where the two policies' argmax-b_E disagree (forecast
+        # quality matters for sizing)
+        b_single = [
+            max([r for r in rows if r["policy"] == "single" and r["lambda"] == lam],
+                key=lambda r: r["npv"])["b_E"] for lam in lambdas
+        ]
+        b_ens = [
+            max([r for r in rows if r["policy"] == "ensemble" and r["lambda"] == lam],
+                key=lambda r: r["npv"])["b_E"] for lam in lambdas
+        ]
+        diverge = [b_single[j] != b_ens[j] for j in range(len(lambdas))]
+        for j, lam in enumerate(lambdas):
+            if diverge[j]:
+                ax.axvspan(lam * 0.7, lam * 1.4, color="grey", alpha=0.12,
+                            lw=0)
+        ax.set_xscale("symlog", linthresh=1)
+        ax.set_xlabel(r"imbalance penalty $\lambda$ (€/MWh)", fontsize=10)
+        if year == 2021:
+            ax.set_ylabel("NPV at optimal $b_E$ (M€, 15-yr, 7%)",
+                           fontsize=10)
+            ax.legend(loc="lower left", fontsize=9)
+        ax.set_title(f"DK1 {year}", fontsize=11)
+        ax.grid(alpha=0.3)
+    fig.suptitle(
+        "NPV vs imbalance penalty for energy promised but not delivered. "
+        "Shaded $\\lambda$ bands: single and ensemble pick different $b_E^*$.",
+        y=1.02, fontsize=11,
     )
-    ax.grid(alpha=0.3)
-    ax.legend(loc="lower center", fontsize=10)
     fig.tight_layout()
     fig.savefig(out, dpi=130, bbox_inches="tight")
     plt.close(fig)
