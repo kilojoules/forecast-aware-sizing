@@ -1,4 +1,6 @@
-# battery_gym
+# forecast-aware-sizing
+
+(formerly `battery_gym`; prior RL-ELM degradation reproduction kept under `rl_elm/`.)
 
 **Forecast uncertainty hits NPV through the imbalance penalty.** At
 $\lambda = 0$ (pure merchant, no settlement on energy promised but not
@@ -73,7 +75,7 @@ Full writeup: `paper/paper.pdf` (16 pages, workshop submission).
 ## Repo layout
 
 ```
-battery_gym/
+forecast-aware-sizing/
 ├── paper/              workshop paper source + figures
 │   ├── paper.tex
 │   ├── paper.pdf

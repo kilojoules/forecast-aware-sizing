@@ -1,17 +1,17 @@
 [project]
-name = "battery_gym"
+name = "forecast-aware-sizing"
 version = "0.1.0"
-description = "Reproduction of Srinivasa et al. 2026 battery-fleet RL"
+description = "Battery sizing under dispatch fidelity and imbalance-penalty regimes"
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 
 [tasks]
 test = "python tests/sanity.py"
 test-priceenv = "python tests/test_price_env.py"
-phase1 = "python phase1_benchmark.py"
-run-small = "python run.py --B 2 3 --c 2 3 --d 2 3 --T 100000"
-multi-seed = "python multi_seed.py"
-elm-sweep = "python elm_sweep.py"
+benchmark = "python sizing/paper_benchmark.py"
+imbalance = "python sizing/paper_imbalance.py --year 2022 --out results/imbalance/dk1_2022.json"
+figures = "python sizing/paper_stress_figures.py"
+readme-figures = "python sizing/readme_figures.py"
 
 [dependencies]
 python = "3.11.*"
