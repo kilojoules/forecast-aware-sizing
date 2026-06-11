@@ -33,19 +33,40 @@ March-2025 Nordic balancing reforms lifted average up-regulation
 spreads to 92–123 €/MWh — **wind-heavy plants crossed the line**, into
 the regime where forecast quality decides how big a battery to build:
 
-![Left: real Danish settlement vs the break-point. Right: break-point vs wind/battery ratio.](paper/figures/fig_paper_real_imbalance.png)
+![Real Danish penalties 2021-2023 sat left of the break-point zone; post-2025 reforms sit inside/right of it.](paper/figures/fig_readme_penalty.png)
 
-**Why does a better forecast shrink the battery?** Watch the same
-16 MWh battery dispatch the same crisis week with two forecast
-qualities:
+(Break-point measured per plant configuration and against both real
+settlement regimes: `paper/figures/fig_paper_real_imbalance.png`.)
 
-![Battery state of charge over a 2022 spike week: cheap forecast slams both rails, ensemble stays mid-band.](paper/figures/fig_readme_soc.png)
+**How much is knowing the future worth?** Dispatch the same 16 MWh
+battery through DK1 2022 under each combination of *plan* (cheap
+single forecast vs robust ensemble) and *information* (forecast vs
+perfectly known future), always paid at realized prices:
 
-The cheap forecast (blue) chases phantom price spikes and slams the
-battery into both rails — full and empty — leaving no headroom to
-absorb wind-forecast misses. The ensemble (orange) stays in the middle
-band, keeping headroom free. Headroom is what soaks up delivery errors,
-so the better forecast needs less battery to avoid the same penalties.
+| plan ↓ / future → | perfectly known | uncertain (forecast) |
+|---|---|---|
+| **deterministic (single forecast)** | €418.6k — the oracle upper bound | €244.0k (58% of oracle) |
+| **robust (ensemble)** | €418.6k — same cell: an ensemble of the truth *is* the truth | €293.9k (70% of oracle) |
+
+(Full-year arbitrage revenue, DK1 2022, 16 MWh battery. With a
+perfectly known future the two plans coincide — uncertainty is the
+only thing that separates them.)
+
+So the robust plan recovers about a quarter of what uncertainty takes
+away. Here is what that looks like on the worst week of the crisis:
+
+![Battery state of charge over a 2022 spike week: perfect foresight, cheap forecast, ensemble.](paper/figures/fig_readme_soc.png)
+
+Perfect foresight (grey, dashed) cycles hard *and* times every swing
+right — week revenue €21.1k. The cheap forecast (blue) cycles just as
+hard but chases day-old price patterns, slamming into full/empty at
+the wrong moments — €14.5k. The ensemble (orange) hedges across
+several past patterns, cycles shallower, and lands in between —
+€17.3k. Under a delivery penalty the rail-slamming costs twice: wrong
+arbitrage timing *and* no headroom left to absorb wind-forecast
+misses. That's why the cheap-forecast plant needs a bigger battery
+once penalties bite — and why better forecasts substitute for
+capacity.
 
 ---
 

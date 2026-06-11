@@ -83,6 +83,64 @@ def figure_npv(out: Path):
     print(f"Wrote {out}")
 
 
+def figure_penalty(out: Path):
+    """One-message number line: real DK1 penalties vs the break-point."""
+    lam_eff = {2021: 10.9, 2022: 27.7, 2023: 14.9}  # two-price, paper_real_imbalance
+    fig, ax = plt.subplots(figsize=(9, 2.8))
+    ax.axvspan(50, 100, color="grey", alpha=0.3)
+    ax.text(75, 0.78, "break-point zone:\nforecast quality starts\ndriving battery size",
+            ha="center", va="center", fontsize=9, color="0.25")
+    ax.axvspan(92, 123, color="#d62728", alpha=0.18)
+    ax.text(107.5, 0.28, "DK1 after\nMar-2025\nreforms", ha="center",
+            va="center", fontsize=9, color="#a02020")
+    offsets = {2021: (-10, 14), 2022: (0, 14), 2023: (10, 14)}
+    for y, x in lam_eff.items():
+        ax.plot([x], [0.5], "o", color="#1f77b4", ms=11, zorder=3)
+        dx, dy = offsets[y]
+        ax.annotate(str(y), (x, 0.5), textcoords="offset points",
+                    xytext=(dx, dy), ha="center", fontsize=10,
+                    color="#1f77b4")
+    ax.text(17, 0.22, "what Danish wind+battery plants\nactually paid, 2021–2023",
+            ha="center", va="center", fontsize=9, color="#1f77b4")
+    ax.set_xlim(0, 130)
+    ax.set_ylim(0, 1)
+    ax.set_yticks([])
+    ax.set_xlabel("penalty for energy promised but not delivered (€/MWh)",
+                  fontsize=10)
+    ax.set_title("Below the zone: cheap-forecast sizing is safe. "
+                 "The 2025 reforms ended that.", fontsize=11)
+    ax.spines[["left", "right", "top"]].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(out, dpi=130, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Wrote {out}")
+
+
+def year_revenue_stats(b_E: float = 16.0, b_P: float = 1.0,
+                       year: int = 2022, chunk: int = 24 * 7 * 8):
+    """Full-year arbitrage revenue: oracle vs ensemble vs single.
+
+    Plan on {realized | ensemble | single}, always evaluated on realized
+    prices. 'Plan on realized' = perfect foresight (note: an ensemble of
+    the truth IS the truth, so 'robust plan + perfectly known future'
+    coincides with this oracle).
+    """
+    realized, forecasts_K = multi_lag_persistence(year, area="DK1")
+    plans = {"oracle": realized,
+             "ensemble": forecasts_K.mean(axis=0),
+             "single": forecasts_K[0]}
+    rev = {}
+    for name, plan in plans.items():
+        total, soc = 0.0, b_E / 2
+        for s in range(0, len(realized), chunk):
+            e = min(s + chunk, len(realized))
+            a = lp_linear_actions(plan[s:e], b_E, b_P, soc, mu=0.0)
+            total += float(np.sum(realized[s:e] * a))
+            soc = max(0.0, min(b_E, soc - float(np.sum(a))))
+        rev[name] = total
+    return rev
+
+
 def figure_soc(out: Path):
     b_E, b_P = 16.0, 1.0
     realized, forecasts_K = multi_lag_persistence(2022, area="DK1")
@@ -97,6 +155,7 @@ def figure_soc(out: Path):
     hours = np.arange(len(r_slice))
 
     soc0 = b_E / 2
+    a_oracle = lp_linear_actions(r_slice, b_E, b_P, soc0, mu=0.0)
     a_single = lp_linear_actions(f_single, b_E, b_P, soc0, mu=0.0)
     a_ens = lp_linear_actions(f_ens, b_E, b_P, soc0, mu=0.0)
 
@@ -105,28 +164,41 @@ def figure_soc(out: Path):
         for a in actions:
             soc.append(max(0.0, min(b_E, soc[-1] - a)))
         return np.array(soc)
-    soc_single = walk(a_single)
-    soc_ens = walk(a_ens)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5, 5),
+    def week_rev(actions):
+        return float(np.sum(r_slice * actions))
+
+    yr = year_revenue_stats(b_E=b_E, b_P=b_P, year=2022)
+    print("DK1 2022 full-year arbitrage revenue (b_E=16):")
+    for k, v in yr.items():
+        print(f"  {k:9s} €{v:,.0f}  ({v / yr['oracle'] * 100:.0f}% of oracle)")
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8.5, 5.4),
                                      sharex=True, gridspec_kw={"height_ratios": [1, 1.4]})
     ax1.plot(hours, r_slice, color="black", lw=1.2, label="realized DA price")
     ax1.set_ylabel("€/MWh", fontsize=10)
-    ax1.set_title("DK1 2022 spike week: single-forecast over-cycles, ensemble smooths",
-                   fontsize=11)
+    ax1.set_title("Same battery, same crisis week, three information levels "
+                  "(DK1 2022)", fontsize=11)
     ax1.grid(alpha=0.3)
     ax1.legend(loc="upper right", fontsize=9)
 
-    ax2.plot(np.arange(len(soc_single)), soc_single, color="#1f77b4",
-             lw=1.8, label="single forecast (over-cycles, hits both rails)")
-    ax2.plot(np.arange(len(soc_ens)), soc_ens, color="#ff7f0e",
-             lw=1.8, label="ensemble (shallower, stays in middle band)")
+    for actions, color, ls, label in [
+        (a_oracle, "0.45", "--",
+         f"perfect foresight (upper bound)  week €{week_rev(a_oracle)/1e3:.1f}k"),
+        (a_single, "#1f77b4", "-",
+         f"cheap forecast  week €{week_rev(a_single)/1e3:.1f}k"),
+        (a_ens, "#ff7f0e", "-",
+         f"ensemble forecast  week €{week_rev(a_ens)/1e3:.1f}k"),
+    ]:
+        ax2.plot(np.arange(len(actions) + 1), walk(actions), color=color,
+                 ls=ls, lw=1.8, label=label)
     ax2.axhline(b_E, color="grey", lw=0.5, ls="--")
     ax2.axhline(0, color="grey", lw=0.5, ls="--")
     ax2.set_xlabel("hour of week", fontsize=10)
-    ax2.set_ylabel(f"SoC (MWh, on $b_E = {int(b_E)}$ probe)", fontsize=10)
+    ax2.set_ylabel(f"state of charge (MWh, {int(b_E)} MWh battery)",
+                   fontsize=10)
     ax2.grid(alpha=0.3)
-    ax2.legend(loc="upper right", fontsize=9)
+    ax2.legend(loc="upper right", fontsize=8)
     fig.tight_layout()
     fig.savefig(out, dpi=130, bbox_inches="tight")
     plt.close(fig)
@@ -136,4 +208,5 @@ def figure_soc(out: Path):
 if __name__ == "__main__":
     FIGURES.mkdir(parents=True, exist_ok=True)
     figure_npv(FIGURES / "fig_readme_npv.png")
+    figure_penalty(FIGURES / "fig_readme_penalty.png")
     figure_soc(FIGURES / "fig_readme_soc.png")
