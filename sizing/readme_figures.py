@@ -141,6 +141,79 @@ def year_revenue_stats(b_E: float = 16.0, b_P: float = 1.0,
     return rev
 
 
+def maxmin_lp_actions(members: np.ndarray, b_E: float, b_P: float,
+                      soc0: float) -> np.ndarray:
+    """Worst-case-robust dispatch: maximize min_k members[k] @ a.
+
+    Variables x = [P_chg(T), P_dis(T), soc(T), t]; maximize t subject to
+    t <= revenue_k for every ensemble member k, plus battery dynamics.
+    """
+    from scipy.optimize import linprog
+    from scipy.sparse import bmat, eye, identity, csr_matrix
+    K, T = members.shape
+    c = np.zeros(3 * T + 1)
+    c[-1] = -1.0  # maximize t
+    bounds = ([(0.0, b_P)] * (2 * T) + [(0.0, b_E)] * T + [(None, None)])
+    D = identity(T, format="csr") - eye(T, k=-1, format="csr")
+    A_eq = bmat([[-identity(T), identity(T), D,
+                  csr_matrix((T, 1))]], format="csr")
+    b_eq = np.zeros(T)
+    b_eq[0] = soc0
+    # t - p_k . (P_dis - P_chg) <= 0  ->  [+p_k, -p_k, 0, 1] x <= 0
+    A_ub = np.zeros((K, 3 * T + 1))
+    for k in range(K):
+        A_ub[k, :T] = members[k]
+        A_ub[k, T:2 * T] = -members[k]
+        A_ub[k, -1] = 1.0
+    res = linprog(c, A_ub=csr_matrix(A_ub), b_ub=np.zeros(K),
+                  A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
+    if not res.success:
+        raise RuntimeError(f"maxmin_lp_actions: {res.message}")
+    return res.x[T:2 * T] - res.x[:T]
+
+
+def robust_vs_deterministic_stats(b_E: float = 16.0, b_P: float = 1.0,
+                                  year: int = 2022,
+                                  chunk: int = 24 * 7 * 8):
+    """The plan-vs-future table.
+
+    Plans: deterministic = LP on the ensemble-mean trajectory (assumes
+    its point forecast is the truth); robust = max-min LP across the
+    K=4 ensemble members. Both evaluated (a) on the assumed mean
+    trajectory, (b) across each ensemble member (statistics), (c) on
+    realized prices.
+    """
+    realized, F = multi_lag_persistence(year, area="DK1")
+    mean_traj = F.mean(axis=0)
+    K, T = F.shape
+
+    def build(plan_fn):
+        a_full, soc = np.zeros(T), b_E / 2
+        for s in range(0, T, chunk):
+            e = min(s + chunk, T)
+            a = plan_fn(s, e, soc)
+            a_full[s:e] = a
+            soc = max(0.0, min(b_E, soc - float(np.sum(a))))
+        return a_full
+
+    a_det = build(lambda s, e, soc:
+                  lp_linear_actions(mean_traj[s:e], b_E, b_P, soc, mu=0.0))
+    a_rob = build(lambda s, e, soc:
+                  maxmin_lp_actions(F[:, s:e], b_E, b_P, soc))
+
+    out = {}
+    for name, a in [("deterministic", a_det), ("robust", a_rob)]:
+        member_revs = F @ a
+        out[name] = {
+            "assumed": float(mean_traj @ a),
+            "member_mean": float(member_revs.mean()),
+            "member_std": float(member_revs.std()),
+            "member_worst": float(member_revs.min()),
+            "realized": float(realized @ a),
+        }
+    return out
+
+
 def figure_soc(out: Path):
     b_E, b_P = 16.0, 1.0
     realized, forecasts_K = multi_lag_persistence(2022, area="DK1")

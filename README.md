@@ -38,22 +38,31 @@ the regime where forecast quality decides how big a battery to build:
 (Break-point measured per plant configuration and against both real
 settlement regimes: `paper/figures/fig_paper_real_imbalance.png`.)
 
-**How much is knowing the future worth?** Dispatch the same 16 MWh
-battery through DK1 2022 under each combination of *plan* (cheap
-single forecast vs robust ensemble) and *information* (forecast vs
-perfectly known future), always paid at realized prices:
+**How much is knowing the future worth?** Plan a year of dispatch for
+the same 16 MWh battery (DK1 2022) two ways: a **deterministic** plan
+that optimizes against one assumed trajectory (the ensemble mean) as
+if it were certain, and a **robust** plan that hedges across the K=4
+ensemble members (max-min). Then evaluate each plan on its assumed
+future, across the ensemble of futures, and on what actually happened:
 
-| plan ↓ / future → | perfectly known | uncertain (forecast) |
-|---|---|---|
-| **deterministic (single forecast)** | €418.6k — the oracle upper bound | €244.0k (58% of oracle) |
-| **robust (ensemble)** | €418.6k — same cell: an ensemble of the truth *is* the truth | €293.9k (70% of oracle) |
+| plan ↓ / evaluated on → | its assumed future | the 4 ensemble members | realized 2022 |
+|---|---|---|---|
+| **deterministic** (treats the mean as truth) | €346.5k | mean €346.5k ± 12.1k, worst €326.4k | €293.9k |
+| **robust** (max-min across members) | €340.7k | mean €340.7k ± 3.3k, worst €337.5k | €287.1k |
 
-(Full-year arbitrage revenue, DK1 2022, 16 MWh battery. With a
-perfectly known future the two plans coincide — uncertainty is the
-only thing that separates them.)
+Read it row against row: the robust plan gives up €6k of average to
+buy an €11k-better floor and a 4× tighter spread across futures —
+insurance, priced. (For the deterministic row, "assumed" and
+"ensemble mean" coincide because revenue is linear in price: planning
+on the mean *is* the expectation-optimal plan.) And read the last
+column against the first: both plans promise ≈€340–347k but collect
+≈€290k, while a perfect-foresight oracle collects €418.6k — the
+actual 2022 lay outside what any of the past-pattern members
+predicted. Forecast uncertainty costs ~30% of the oracle's revenue,
+and no amount of clever planning over a bad ensemble buys it back.
 
-So the robust plan recovers about a quarter of what uncertainty takes
-away. Here is what that looks like on the worst week of the crisis:
+Here is what those information levels look like on the worst week of
+the crisis:
 
 ![Battery state of charge over a 2022 spike week: perfect foresight, cheap forecast, ensemble.](paper/figures/fig_readme_soc.png)
 
