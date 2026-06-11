@@ -83,39 +83,6 @@ def figure_npv(out: Path):
     print(f"Wrote {out}")
 
 
-def figure_penalty(out: Path):
-    """One-message number line: real DK1 penalties vs the break-point."""
-    lam_eff = {2021: 10.9, 2022: 27.7, 2023: 14.9}  # two-price, paper_real_imbalance
-    fig, ax = plt.subplots(figsize=(9, 2.8))
-    ax.axvspan(50, 100, color="grey", alpha=0.3)
-    ax.text(75, 0.78, "break-point zone:\nforecast quality starts\ndriving battery size",
-            ha="center", va="center", fontsize=9, color="0.25")
-    ax.axvspan(92, 123, color="#d62728", alpha=0.18)
-    ax.text(107.5, 0.28, "DK1 after\nMar-2025\nreforms", ha="center",
-            va="center", fontsize=9, color="#a02020")
-    offsets = {2021: (-10, 14), 2022: (0, 14), 2023: (10, 14)}
-    for y, x in lam_eff.items():
-        ax.plot([x], [0.5], "o", color="#1f77b4", ms=11, zorder=3)
-        dx, dy = offsets[y]
-        ax.annotate(str(y), (x, 0.5), textcoords="offset points",
-                    xytext=(dx, dy), ha="center", fontsize=10,
-                    color="#1f77b4")
-    ax.text(17, 0.22, "what Danish wind+battery plants\nactually paid, 2021–2023",
-            ha="center", va="center", fontsize=9, color="#1f77b4")
-    ax.set_xlim(0, 130)
-    ax.set_ylim(0, 1)
-    ax.set_yticks([])
-    ax.set_xlabel("penalty for energy promised but not delivered (€/MWh)",
-                  fontsize=10)
-    ax.set_title("Below the zone: cheap-forecast sizing is safe. "
-                 "The 2025 reforms ended that.", fontsize=11)
-    ax.spines[["left", "right", "top"]].set_visible(False)
-    fig.tight_layout()
-    fig.savefig(out, dpi=130, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Wrote {out}")
-
-
 def year_revenue_stats(b_E: float = 16.0, b_P: float = 1.0,
                        year: int = 2022, chunk: int = 24 * 7 * 8):
     """Full-year arbitrage revenue: oracle vs ensemble vs single.
@@ -250,5 +217,4 @@ def figure_soc(out: Path):
 if __name__ == "__main__":
     FIGURES.mkdir(parents=True, exist_ok=True)
     figure_npv(FIGURES / "fig_readme_npv.png")
-    figure_penalty(FIGURES / "fig_readme_penalty.png")
     figure_soc(FIGURES / "fig_readme_soc.png")

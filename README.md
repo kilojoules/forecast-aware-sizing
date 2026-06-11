@@ -33,10 +33,9 @@ March-2025 Nordic balancing reforms lifted average up-regulation
 spreads to 92–123 €/MWh — **wind-heavy plants crossed the line**, into
 the regime where forecast quality decides how big a battery to build:
 
-![Real Danish penalties 2021-2023 sat left of the break-point zone; post-2025 reforms sit inside/right of it.](paper/figures/fig_readme_penalty.png)
-
-(Break-point measured per plant configuration and against both real
-settlement regimes: `paper/figures/fig_paper_real_imbalance.png`.)
+(Measured per plant configuration and against both real settlement
+regimes — see `paper/figures/fig_paper_real_imbalance.png` and §5.2 of
+the paper.)
 
 **How much is knowing the future worth?** Plan a year of dispatch for
 the same 16 MWh battery (DK1 2022) two ways: a **deterministic** plan
