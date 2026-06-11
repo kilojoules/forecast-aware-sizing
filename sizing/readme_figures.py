@@ -24,7 +24,7 @@ sys.path.insert(0, str(SIZING_DIR))
 import matplotlib.pyplot as plt
 import numpy as np
 
-from arbitrage_agents import lp_linear_actions
+from arbitrage_agents import lp_linear_actions, lp_maxmin_actions
 from dk_loader import load_dk_year, multi_lag_persistence
 
 
@@ -141,37 +141,6 @@ def year_revenue_stats(b_E: float = 16.0, b_P: float = 1.0,
     return rev
 
 
-def maxmin_lp_actions(members: np.ndarray, b_E: float, b_P: float,
-                      soc0: float) -> np.ndarray:
-    """Worst-case-robust dispatch: maximize min_k members[k] @ a.
-
-    Variables x = [P_chg(T), P_dis(T), soc(T), t]; maximize t subject to
-    t <= revenue_k for every ensemble member k, plus battery dynamics.
-    """
-    from scipy.optimize import linprog
-    from scipy.sparse import bmat, eye, identity, csr_matrix
-    K, T = members.shape
-    c = np.zeros(3 * T + 1)
-    c[-1] = -1.0  # maximize t
-    bounds = ([(0.0, b_P)] * (2 * T) + [(0.0, b_E)] * T + [(None, None)])
-    D = identity(T, format="csr") - eye(T, k=-1, format="csr")
-    A_eq = bmat([[-identity(T), identity(T), D,
-                  csr_matrix((T, 1))]], format="csr")
-    b_eq = np.zeros(T)
-    b_eq[0] = soc0
-    # t - p_k . (P_dis - P_chg) <= 0  ->  [+p_k, -p_k, 0, 1] x <= 0
-    A_ub = np.zeros((K, 3 * T + 1))
-    for k in range(K):
-        A_ub[k, :T] = members[k]
-        A_ub[k, T:2 * T] = -members[k]
-        A_ub[k, -1] = 1.0
-    res = linprog(c, A_ub=csr_matrix(A_ub), b_ub=np.zeros(K),
-                  A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
-    if not res.success:
-        raise RuntimeError(f"maxmin_lp_actions: {res.message}")
-    return res.x[T:2 * T] - res.x[:T]
-
-
 def robust_vs_deterministic_stats(b_E: float = 16.0, b_P: float = 1.0,
                                   year: int = 2022,
                                   chunk: int = 24 * 7 * 8):
@@ -199,7 +168,7 @@ def robust_vs_deterministic_stats(b_E: float = 16.0, b_P: float = 1.0,
     a_det = build(lambda s, e, soc:
                   lp_linear_actions(mean_traj[s:e], b_E, b_P, soc, mu=0.0))
     a_rob = build(lambda s, e, soc:
-                  maxmin_lp_actions(F[:, s:e], b_E, b_P, soc))
+                  lp_maxmin_actions(F[:, s:e], b_E, b_P, soc))
 
     out = {}
     for name, a in [("deterministic", a_det), ("robust", a_rob)]:

@@ -42,7 +42,7 @@ We motivate the diagnostic with a theoretical sketch (\S\ref{sec:theory}), then 
 \item ERCOT HB\_NORTH day-ahead prices for 2021/2022/2023, including February 2021 Storm Uri (sustained \$9000/MWh price-cap hours, kurtosis 165).
 \end{itemize}
 
-Under the persistence-ensemble baseline, the diagnostic returns ``invariance survives'' in every (market, year): $b_E^*$ is identical across deterministic and stochastic dispatch policies, even though stochastic dispatch yields $0.9$--$37\%$ realized-NPV uplift. Three orthogonal stress tests on LUMI HPC --- a 2-D $(b_E, b_P)$ sweep, a richer quantile-regression ensemble (K=20 quantile samples), and a scenario stochastic LP (N=50 scenarios) --- broaden the test. \textbf{17 of 18 regimes return ``invariance survives''. The single break is DK1 2022 under the quantile-regression ensemble} (the highest-volatility year combined with the most-informative ensemble) where $b_E^*$ shifts $4 \to 8$ MWh between the linear-single policy and the others. The diagnostic correctly fires ``disjoint'' there. The proposition's regime-shift prediction, falsified at the persistence-ensemble level, is partially recovered under richer forecasts on the most-stressed regime --- which is the operationally-correct behaviour for a regime classifier.
+Under the persistence-ensemble baseline, the diagnostic returns ``invariance survives'' in every (market, year): $b_E^*$ is identical across deterministic and stochastic dispatch policies, even though stochastic dispatch yields $0.9$--$37\%$ realized-NPV uplift. Three orthogonal stress tests on LUMI HPC --- a 2-D $(b_E, b_P)$ sweep, a richer quantile-regression ensemble (K=20 quantile samples), and a scenario stochastic LP (N=50 scenarios) --- broaden the test, and a post-hoc max-min robust policy varies the decision attitude (it preserves the argmax in 5 of 6 regimes and lands on the quadratic policies' optimum in the sixth). \textbf{17 of 18 pre-registered regimes return ``invariance survives''. The single break is DK1 2022 under the quantile-regression ensemble} (the highest-volatility year combined with the most-informative ensemble) where $b_E^*$ shifts $4 \to 8$ MWh between the linear-single policy and the others. The diagnostic correctly fires ``disjoint'' there. The proposition's regime-shift prediction, falsified at the persistence-ensemble level, is partially recovered under richer forecasts on the most-stressed regime --- which is the operationally-correct behaviour for a regime classifier.
 
 \paragraph{Implication for practice.} Across the markets and regimes tested, deterministic-LP-inner-dispatch in academic sizing tools is empirically robust on the question those tools answer --- recommended capacity. Operational stochastic-dispatch (Tesla / Fluence / W\"{a}rtsil\"{a}) is independently justified by the realized-NPV uplift. The architectural divergence is empirically supported, and any operator can verify it for their market by running the diagnostic.
 
@@ -89,7 +89,7 @@ ERCOT N. & 2023 & USD/MWh & 55.5   & 218.7  & 1.1     & 4200.0 & 177.5 \\
 
 \paragraph{Multi-lag ensemble ($K{=}4$).} Persistence at lags $\{24, 48, 168, 336\}$ hours, averaged. Each member is a different hypothesis about which past pattern best predicts the present; averaging cancels lag-specific biases. Standard ensemble approach in load + price forecasting (\citealp{hong2014global, weron2014electricity}).
 
-\paragraph{$2 \times 2$ policy factorial.} \{linear LP via \texttt{scipy.linprog} HiGHS, quadratic QP via \texttt{cvxpy} CLARABEL\} $\times$ \{single, ensemble\}, with cycling-cost coefficient $\alpha = 0.005$ (QP) or $\mu = 5.0$ /MWh (LP). Year-long horizons split into 8-week chunks; SoC carries forward across chunks.
+\paragraph{$2 \times 2$ policy factorial.} \{linear LP via \texttt{scipy.linprog} HiGHS, quadratic QP via \texttt{cvxpy} CLARABEL\} $\times$ \{single, ensemble\}, with cycling-cost coefficient $\alpha = 0.005$ (QP) or $\mu = 5.0$ /MWh (LP). Year-long horizons split into 8-week chunks; SoC carries forward across chunks. A fifth, post-hoc policy --- a worst-case max-min LP over the ensemble members --- varies the decision attitude rather than the forecast and is reported as a stress test (\S\ref{sec:stress}).
 
 \subsection{Sizing model}
 
@@ -201,10 +201,11 @@ The proposition predicted multi-day spectral content (DK1 weekly peaks, ERCOT br
 
 This is a clean negative result for the regime-shift prediction and a positive result for the diagnostic: the test correctly returns ``overlap''; the proposition that motivated it was wrong about which regimes would yield ``disjoint''. The diagnostic survives because its job was to measure --- not to predict --- the overlap status of $b_{\mathrm{sat}}^\epsilon$ CIs.
 
-\subsection{Stress tests: 2-D sweep, quantile-regression ensemble, scenario SLP}\label{sec:stress}
+\subsection{Stress tests: 2-D sweep, quantile-regression ensemble, scenario SLP, max-min robust}\label{sec:stress}
 
 The 1-D / multi-lag-persistence baseline is one slice of the design
-space. Three orthogonal stress tests on LUMI HPC probe robustness.
+space. Three pre-registered stress tests on LUMI HPC probe robustness;
+a fourth, post-hoc test varies the decision attitude.
 
 \paragraph{2-D $(b_E, b_P)$ sweep.} 30 $(b_P, b_E)$ configurations
 $b_P \in \{0.25, 0.5, 1, 2, 4\}$ MW $\times$ $b_E \in \{1, 2, 4, 8, 16, 32\}$
@@ -256,6 +257,27 @@ $\to$ 8, ERCOT 2023 $\to$ 8). SLP NPV is lower than full-horizon LP
 by 5--30\%, consistent with the rolling-horizon vs perfect-foresight
 gap; the sizing recommendation, however, is the same. See
 Figure~\ref{fig:slp}.
+
+\paragraph{Max-min robust policy (post hoc).} The factorial and the
+three pre-registered stress tests all plan against a point trajectory
+or an expectation; since revenue is linear in price, planning on the
+ensemble mean \emph{is} the expectation-optimal stochastic plan, so
+they span forecast quality but only one decision attitude. A fourth,
+post-hoc test (not pre-registered) varies the attitude: a worst-case
+LP that maximizes the \emph{minimum} revenue across the K=4 multi-lag
+members (\texttt{lp\_maxmin\_actions}; variables $[P^{\mathrm{chg}},
+P^{\mathrm{dis}}, \mathrm{SoC}, t]$, maximize $t$ s.t.\ $t \leq$
+revenue under every member), same chunking and cycling cost as the
+factorial. \emph{Result:} $b_E^*$ identical to the linear policies in
+5 of 6 regimes (DK1 $4/8/4$, ERCOT 2022/2023 $8/8$). The single
+deviation is ERCOT 2021 (Uri), where max-min picks $8$ MWh ---
+exactly the quadratic policies' optimum in the cell already flagged
+for cost-form asymmetry: risk-averse hedging cycles conservatively,
+like a cycling-penalized policy, and lands within the argmax span the
+factorial already produced. No new sizing regime opens. NPV at the
+robust argmax sits $3$--$14\%$ below the ensemble policy's (the price
+of hedging across members), consistent with the operational ordering
+ensemble $\geq$ max-min $>$ single.
 
 \begin{figure}[t]
 \centering
@@ -395,7 +417,7 @@ This result cuts both ways for commercial positioning. Fluence markets Mosaic fo
 \item Dispatch is settlement-blind. Policies schedule against price/wind forecasts without seeing $\lambda$ or imbalance-price forecasts; a settlement-aware bidder could shift $\lambda^*$.
 \end{enumerate}
 
-The most consequential limitation is (2): a richer wind ensemble might move the break-point, in which case the diagnostic correctly fires under richer forecasts and the reported $\lambda^*$ is conditional on the cheap-ensemble baseline. We frame conservatively: \emph{multi-lag persistence ensemble does not break invariance on DK1 or ERCOT in the merchant limit, nor under real DK1 settlement 2021--2023, on the slices tested}.
+The most consequential limitation is (2): a richer wind ensemble might move the break-point, in which case the diagnostic correctly fires under richer forecasts and the reported $\lambda^*$ is conditional on the cheap-ensemble baseline. We frame conservatively: \emph{multi-lag persistence ensemble does not break invariance on DK1 or ERCOT in the merchant limit, nor under real DK1 settlement 2021--2023, nor under a max-min robust decision rule over the same members, on the slices tested}.
 
 \section{Conclusion}
 

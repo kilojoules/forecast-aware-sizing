@@ -68,6 +68,41 @@ def lp_linear_actions(prices, b_E: float, b_P: float, soc0: float,
     return P_dis - P_chg
 
 
+def lp_maxmin_actions(members, b_E: float, b_P: float, soc0: float,
+                      mu: float = 0.0, eta: float = 1.0) -> np.ndarray:
+    """Worst-case-robust LP: maximize min_k (members[k] @ a - mu * cycling).
+
+    A risk-averse alternative to planning on the ensemble mean (which,
+    for a linear objective, is the expectation-optimal stochastic plan).
+    Variables x = [P_chg, P_dis, soc, t]; maximize t subject to
+    t <= revenue_k for every ensemble member k, plus battery dynamics
+    (same state-variable formulation as lp_linear_actions).
+    """
+    from scipy.sparse import bmat, csr_matrix, eye, identity
+    members = np.asarray(members, dtype=float)
+    K, T = members.shape
+    inv_eta = 1.0 / max(eta, 1e-9)
+    c = np.zeros(3 * T + 1)
+    c[-1] = -1.0  # maximize t
+    bounds = ([(0.0, b_P)] * (2 * T) + [(0.0, b_E)] * T + [(None, None)])
+    D = identity(T, format="csr") - eye(T, k=-1, format="csr")
+    A_eq = bmat([[-eta * identity(T), inv_eta * identity(T), D,
+                  csr_matrix((T, 1))]], format="csr")
+    b_eq = np.zeros(T)
+    b_eq[0] = soc0
+    # t - (p_k . (P_dis - P_chg) - mu . (P_chg + P_dis)) <= 0
+    A_ub = np.zeros((K, 3 * T + 1))
+    for k in range(K):
+        A_ub[k, :T] = members[k] + mu
+        A_ub[k, T:2 * T] = -members[k] + mu
+        A_ub[k, -1] = 1.0
+    res = linprog(c, A_ub=csr_matrix(A_ub), b_ub=np.zeros(K),
+                  A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
+    if not res.success:
+        raise RuntimeError(f"lp_maxmin_actions: {res.message}")
+    return res.x[T:2 * T] - res.x[:T]
+
+
 def qp_quadratic_actions(prices, b_E: float, b_P: float, soc0: float,
                          alpha: float = 0.0, eta: float = 1.0) -> np.ndarray:
     """Solve QP with quadratic cycling cost via cvxpy + OSQP/CLARABEL.

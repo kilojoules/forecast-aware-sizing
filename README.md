@@ -125,6 +125,7 @@ Full writeup: `paper/paper.pdf` (18 pages, submission draft).
 |---|---|
 | Argmax invariance, persistence ensemble, 6 (market, year) | **6/6 survive** at $\lambda=0$ |
 | Argmax invariance, 3 LUMI stress tests × 6 regimes (18 total) | **17/18 survive**; DK1 2022 quantile-K=20 breaks |
+| Max-min robust dispatch (post-hoc, worst-case across K=4 members) | same $b_E^*$ in **5/6 regimes**; ERCOT-2021/Uri lands on the quadratic policies' optimum |
 | Hydesign-default operational constraints vs unrestricted LP | **5.5–35.9% NPV gap** at argmax; $b_E^*$ shifts 2/6 regimes |
 | Imbalance-penalty break-point (5 MW wind + 1 MW battery, DK1) | $\lambda^* \approx 100$ EUR/MWh on **all 3 years**; single $24$ MWh, ensemble $16$ MWh |
 | Break-point vs wind/battery ratio (W = 1/2/5/10/20 MW) | non-increasing, **saturates ≈50 €/MWh** for ratios ≥ 10 |
