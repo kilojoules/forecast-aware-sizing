@@ -49,14 +49,22 @@ def lp_linear_actions(prices, b_E: float, b_P: float, soc0: float,
     """
     prices = np.asarray(prices, dtype=float)
     T = len(prices)
-    n = 2 * T
-    c = np.concatenate([prices + mu, -prices + mu])
-    bounds = [(0.0, b_P)] * n
-    A_ub, b_ub = _soc_constraint_matrices(T, b_E, soc0, eta)
-    res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
+    # State-variable formulation: x = [P_chg, P_dis, soc]. Equivalent to the
+    # cumulative-sum form but with O(T) constraint nonzeros instead of
+    # O(T^2), which keeps HiGHS factorization memory flat (~MBs, not ~GB).
+    from scipy.sparse import bmat, eye, identity
+    inv_eta = 1.0 / max(eta, 1e-9)
+    c = np.concatenate([prices + mu, -prices + mu, np.zeros(T)])
+    bounds = [(0.0, b_P)] * (2 * T) + [(0.0, b_E)] * T
+    # soc[t] - soc[t-1] - eta*P_chg[t] + inv_eta*P_dis[t] = (soc0 if t==0 else 0)
+    D = identity(T, format="csr") - eye(T, k=-1, format="csr")
+    A_eq = bmat([[-eta * identity(T), inv_eta * identity(T), D]], format="csr")
+    b_eq = np.zeros(T)
+    b_eq[0] = soc0
+    res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
     if not res.success:
         raise RuntimeError(f"lp_linear_actions: {res.message}")
-    P_chg, P_dis = res.x[:T], res.x[T:]
+    P_chg, P_dis = res.x[:T], res.x[T:2 * T]
     return P_dis - P_chg
 
 

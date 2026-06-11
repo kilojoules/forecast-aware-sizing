@@ -161,6 +161,61 @@ def load_dk_resources(year: int, area: str = "DK1") -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+def load_dk_balancing(year: int, area: str = "DK1") -> pd.DataFrame:
+    """Pull hourly DK regulating/balancing prices. Cached locally.
+
+    Source: Energinet RegulatingBalancePowerdata (hourly, through the
+    2025-03 transition to 15-min ISP). Columns returned:
+      timestamp_utc
+      imb_eur_per_mwh       one-price imbalance settlement price
+      bal_up_eur_per_mwh    up-regulation (BRP shortfall buys here)
+      bal_down_eur_per_mwh  down-regulation (BRP surplus sells here)
+    """
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    fp = DATA_DIR / f"{area}_balancing_{year}.csv"
+    if fp.exists():
+        return pd.read_csv(fp, parse_dates=["timestamp_utc"])
+    rows = []
+    for month in range(1, 13):
+        start = f"{year}-{month:02d}-01"
+        end = f"{year + 1}-01-01" if month == 12 else f"{year}-{month + 1:02d}-01"
+        params = {
+            "start": start, "end": end,
+            "filter": f'{{"PriceArea":["{area}"]}}',
+            "limit": 10000,
+        }
+        for attempt in range(8):
+            r = requests.get(
+                "https://api.energidataservice.dk/dataset/RegulatingBalancePowerdata",
+                params=params, timeout=30)
+            if r.status_code == 429:
+                # Energinet rate limit; message says how long to wait
+                import re
+                m = re.search(r"(\d+) seconds", r.text)
+                wait = min(int(m.group(1)) + 5, 320) if m else 60
+                print(f"  429 on {year}-{month:02d}, sleeping {wait}s")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            rows.extend(r.json()["records"])
+            time.sleep(1.0)
+            break
+        else:
+            raise RuntimeError(f"Failed {year}-{month}: rate limit persisted")
+    df = pd.DataFrame(rows)
+    df["timestamp_utc"] = pd.to_datetime(df["HourUTC"], utc=True)
+    df = df.rename(columns={
+        "ImbalancePriceEUR": "imb_eur_per_mwh",
+        "BalancingPowerPriceUpEUR": "bal_up_eur_per_mwh",
+        "BalancingPowerPriceDownEUR": "bal_down_eur_per_mwh",
+    })
+    df = df[["timestamp_utc", "imb_eur_per_mwh",
+             "bal_up_eur_per_mwh", "bal_down_eur_per_mwh"]]
+    df = df.sort_values("timestamp_utc").drop_duplicates(subset="timestamp_utc")
+    df.to_csv(fp, index=False)
+    return df.reset_index(drop=True)
+
+
 def multi_lag_persistence(year: int, area: str = "DK1",
                           lags_hours: tuple[int, ...] = (24, 48, 168, 336)
                           ) -> tuple[np.ndarray, np.ndarray]:

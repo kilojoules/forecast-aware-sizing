@@ -5,10 +5,22 @@
 **Forecast uncertainty hits NPV through the imbalance penalty.** At
 $\lambda = 0$ (pure merchant, no settlement on energy promised but not
 delivered) the optimal battery size is invariant to forecast quality.
-Above $\lambda \approx 100$ €/MWh — typical for stressed-hour Danish
-BRP imbalance prices — the policies pick visibly different sizes.
+Above a break-point $\lambda^*$ — 25–100 €/MWh at a 5:1 wind/battery
+ratio, saturating near 50 €/MWh for wind-heavier plants — the policies
+pick visibly different sizes.
 
 ![NPV vs imbalance penalty, single vs ensemble, 3 DK1 years](paper/figures/fig_readme_npv.png)
+
+**Where reality sits:** settling the same plant against *actual* DK1
+imbalance prices (eSett, two-price and one-price) gives an effective
+penalty of only 11–28 €/MWh in 2021–2023 — below the break-point, even
+in the crisis year; sizing stayed invariant under real settlement. The
+March-2025 Nordic balancing reforms lifted mean up-regulation spreads
+to 92–123 €/MWh — at or above $\lambda^*$: wind-heavy DK1 hybrid plants
+now sit in the regime where forecast quality drives the capacity
+decision.
+
+![Real settlement vs break-point, and break-point vs wind ratio](paper/figures/fig_paper_real_imbalance.png)
 
 Shaded $\lambda$ bands mark where single-forecast and ensemble policies
 choose different argmax $b_E^*$. At the band's left edge, the ensemble's
