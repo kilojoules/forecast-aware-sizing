@@ -29,16 +29,41 @@ COLORS = {2021: "#1f77b4", 2022: "#d62728", 2023: "#2ca02c"}
 POST2025_BAND = (92.0, 123.0)
 
 
-def lambda_star(rows) -> float | None:
-    """Smallest lambda with argmax divergence, or None."""
-    for lam in sorted({r["lambda"] for r in rows}):
+DISC = sum(1.07 ** -y for y in range(15))
+CAPEX_E, CAPEX_P = 100_000.0, 75_000.0
+FINE_LAMBDAS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80,
+                100, 125, 150, 200, 350, 500]
+
+
+def divergence_segments(rows):
+    """Contiguous lambda ranges where the single-forecast policy sizes
+    ABOVE the ensemble. Residuals are lambda-independent, so NPV is
+    recomputed on the fine lambda grid from stored
+    (arb_rev, wind_da_rev, imb_abs)."""
+    cells = {}
+    for r in rows:
+        cells[(r["b_E"], r["policy"])] = (r["arb_rev"], r["wind_da_rev"],
+                                          r["imb_abs"])
+    bEs = sorted({k[0] for k in cells})
+    diverged = []
+    for lam in FINE_LAMBDAS:
         b = {}
         for pol in ("single", "ensemble"):
-            sub = [r for r in rows if r["policy"] == pol and r["lambda"] == lam]
-            b[pol] = max(sub, key=lambda r: r["npv"])["b_E"]
-        if b["single"] != b["ensemble"]:
-            return lam
-    return None
+            b[pol] = max(
+                (DISC * (cells[(bE, pol)][0] + cells[(bE, pol)][1]
+                         - lam * cells[(bE, pol)][2])
+                 - CAPEX_E * bE - CAPEX_P, bE) for bE in bEs)[1]
+        diverged.append(b["single"] > b["ensemble"])
+    segs, start = [], None
+    for i, d in enumerate(diverged):
+        if d and start is None:
+            start = FINE_LAMBDAS[i]
+        if not d and start is not None:
+            segs.append((start, FINE_LAMBDAS[i]))
+            start = None
+    if start is not None:
+        segs.append((start, FINE_LAMBDAS[-1]))
+    return segs
 
 
 def main(out: Path):
@@ -68,41 +93,36 @@ def main(out: Path):
                   fontsize=10)
     ax1.legend(loc="upper right", fontsize=8)
 
-    # --- right: lambda* vs wind/battery ratio
+    # --- right: divergence bands (single sizes above ensemble) vs ratio
     ratios = [2, 5, 10, 20]
-    jitter = {2021: 0.97, 2022: 1.0, 2023: 1.03}
-    for y in YEARS:
-        stars = []
-        for W in ratios:
+    yoff = {2021: -0.22, 2022: 0.0, 2023: 0.22}
+    for iy, W in enumerate(ratios):
+        for y in YEARS:
             if W == 5:
                 fp = RESULTS / "imbalance" / f"dk1_{y}.json"
             else:
                 fp = RESULTS / "imbalance" / "ratio" / f"dk1_{y}_w{W}.json"
-            rows = json.load(open(fp))["rows"]
-            stars.append(lambda_star(rows))
-        xs = [r * jitter[y] for r, s in zip(ratios, stars) if s is not None]
-        ys = [s for s in stars if s is not None]
-        ax2.plot(xs, ys, "-o", color=COLORS[y], lw=2, ms=7, label=f"DK1 {y}")
-        # mark "no divergence <= 500" with an open upward marker at top
-        for r, s in zip(ratios, stars):
-            if s is None:
-                ax2.plot([r * jitter[y]], [500], "^", mfc="none",
-                         mec=COLORS[y], ms=9)
-    ax2.axhspan(10.9, 27.7, color="grey", alpha=0.25,
+            segs = divergence_segments(json.load(open(fp))["rows"])
+            for (a, b) in segs:
+                ax2.plot([max(a, 5), b], [iy + yoff[y]] * 2, "-",
+                         color=COLORS[y], lw=5, solid_capstyle="butt",
+                         label=f"DK1 {y}" if (iy, (a, b)) == (1, segs[0]) else None)
+    ax2.axvspan(10.9, 27.7, color="grey", alpha=0.25,
                 label=r"real DK1 $\lambda_{\mathrm{eff}}$ 2021--23")
-    ax2.axhspan(*POST2025_BAND, color="#d62728", alpha=0.15,
+    ax2.axvspan(*POST2025_BAND, color="#d62728", alpha=0.15,
                 label="post-2025 up-reg spread")
     ax2.set_xscale("log")
-    ax2.set_yscale("log")
-    ax2.set_xticks(ratios)
-    ax2.set_xticklabels([str(r) for r in ratios])
-    ax2.set_xlabel("wind/battery capacity ratio $W_{\\mathrm{peak}}/b_P$",
-                   fontsize=10)
-    ax2.set_ylabel(r"break-point $\lambda^*$ (€/MWh)", fontsize=10)
-    ax2.set_title("Break-point saturates near 50 €/MWh\n"
-                  r"(open $\triangle$: no divergence up to $\lambda=500$)",
-                  fontsize=10)
-    ax2.legend(loc="upper right", fontsize=8)
+    ax2.set_xlim(5, 550)
+    ax2.set_yticks(range(len(ratios)))
+    ax2.set_yticklabels([f"{r}:1" for r in ratios])
+    ax2.set_xlabel(r"imbalance penalty $\lambda$ (€/MWh)", fontsize=10)
+    ax2.set_ylabel("wind/battery capacity ratio", fontsize=10)
+    ax2.set_title("Where single-forecast sizing exceeds ensemble sizing\n"
+                  "(thick segments; persistent band opens at 45–70 for "
+                  "ratios ≥ 10)", fontsize=10)
+    handles, labels = ax2.get_legend_handles_labels()
+    seen = dict(zip(labels, handles))
+    ax2.legend(seen.values(), seen.keys(), loc="upper left", fontsize=8)
     for ax in (ax1, ax2):
         ax.grid(alpha=0.3)
     fig.tight_layout()
