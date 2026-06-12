@@ -113,17 +113,25 @@ def run_year(year: int):
             wind_da_rev = float(np.sum(p_real * w_fcst))
             short = np.maximum(-residual, 0.0)
             long_ = np.maximum(residual, 0.0)
+            # Full-price settlement: shortfall bought back at P_up,
+            # surplus sold at P_down / P_imb. Equivalent to valuing the
+            # residual at DA (p_dot_r) minus the spread cost; without
+            # the DA term, committed-but-undelivered energy is paid at
+            # DA and charged only the spread -- a money pump for
+            # overbidders.
+            p_dot_r = float(np.sum(p_da * residual))
             cost_2p = float(np.sum(np.maximum(bal_up - p_da, 0.0) * short
                                    + np.maximum(p_da - bal_down, 0.0) * long_))
             cost_1p = float(np.sum(residual * (p_da - imb)))
             imb_abs = float(np.sum(np.abs(residual)))
             row = {"b_E": b_E, "policy": pol, "arb_rev": arb_rev,
                    "wind_da_rev": wind_da_rev, "imb_abs": imb_abs,
+                   "p_dot_r": p_dot_r,
                    "cost_2p": cost_2p, "cost_1p": cost_1p,
                    "lam_eff_2p": cost_2p / imb_abs if imb_abs > 0 else 0.0,
                    "lam_eff_1p": cost_1p / imb_abs if imb_abs > 0 else 0.0}
             for variant, cost in (("two_price", cost_2p), ("one_price", cost_1p)):
-                op = arb_rev + wind_da_rev - cost
+                op = arb_rev + wind_da_rev + p_dot_r - cost
                 row[f"npv_{variant}"] = DISC * op - CAPEX_E * b_E - CAPEX_P * B_P
             rows.append(row)
         print(f"  b_E={b_E:6.1f}  ({time.time()-t0:.1f}s)")

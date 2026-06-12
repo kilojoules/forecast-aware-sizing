@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "alphas": [
+      0.0,
+      0.5,
+      0.85
+    ],
+    "B_E": [
+      0.5,
+      1,
+      2,
+      4,
+      8,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96,
+      128,
+      192,
+      256
+    ],
+    "note": "CVaR over 8-week chunk revenues"
+  },
+  "regimes": {
+    "dk1_2021": {
+      "npv_at_common_b": {
+        "EEV_single": 245922.0639459443,
+        "RP_ensemble": 392214.21021567646,
+        "WS_oracle": 543097.0538571844
+      },
+      "b_star": {
+        "EEV_single": 4.0,
+        "RP_ensemble": 4.0,
+        "WS_oracle": 4.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 4.0,
+          "0.5": 2.0,
+          "0.85": 2.0
+        },
+        "RP_ensemble": {
+          "0": 4.0,
+          "0.5": 4.0,
+          "0.85": 2.0
+        }
+      },
+      "common_b": 4.0,
+      "EVPI": 150882.8436415079,
+      "VSS_op": 146292.14626973215
+    },
+    "dk1_2022": {
+      "npv_at_common_b": {
+        "EEV_single": 1532593.2994143805,
+        "RP_ensemble": 1864414.4007578422,
+        "WS_oracle": 2539799.3049591696
+      },
+      "b_star": {
+        "EEV_single": 8.0,
+        "RP_ensemble": 8.0,
+        "WS_oracle": 8.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 8.0,
+          "0.5": 4.0,
+          "0.85": 4.0
+        },
+        "RP_ensemble": {
+          "0": 8.0,
+          "0.5": 4.0,
+          "0.85": 4.0
+        }
+      },
+      "common_b": 8.0,
+      "EVPI": 675384.9042013274,
+      "VSS_op": 331821.1013434618
+    },
+    "dk1_2023": {
+      "npv_at_common_b": {
+        "EEV_single": 384688.76136733755,
+        "RP_ensemble": 547989.6699494824,
+        "WS_oracle": 689510.9192288888
+      },
+      "b_star": {
+        "EEV_single": 4.0,
+        "RP_ensemble": 4.0,
+        "WS_oracle": 4.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 4.0,
+          "0.5": 4.0,
+          "0.85": 2.0
+        },
+        "RP_ensemble": {
+          "0": 4.0,
+          "0.5": 4.0,
+          "0.85": 2.0
+        }
+      },
+      "common_b": 4.0,
+      "EVPI": 141521.2492794064,
+      "VSS_op": 163300.90858214488
+    },
+    "ercot_2021": {
+      "npv_at_common_b": {
+        "EEV_single": 556135.2227698094,
+        "RP_ensemble": 776221.12192748,
+        "WS_oracle": 1168551.6382647255
+      },
+      "b_star": {
+        "EEV_single": 4.0,
+        "RP_ensemble": 4.0,
+        "WS_oracle": 8.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 4.0,
+          "0.5": 2.0,
+          "0.85": 0.5
+        },
+        "RP_ensemble": {
+          "0": 4.0,
+          "0.5": 2.0,
+          "0.85": 1.0
+        }
+      },
+      "common_b": 4.0,
+      "EVPI": 392330.51633724547,
+      "VSS_op": 220085.89915767056
+    },
+    "ercot_2022": {
+      "npv_at_common_b": {
+        "EEV_single": 787802.4459044973,
+        "RP_ensemble": 836896.9950655233,
+        "WS_oracle": 1023074.9027332801
+      },
+      "b_star": {
+        "EEV_single": 8.0,
+        "RP_ensemble": 8.0,
+        "WS_oracle": 8.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 8.0,
+          "0.5": 4.0,
+          "0.85": 2.0
+        },
+        "RP_ensemble": {
+          "0": 8.0,
+          "0.5": 4.0,
+          "0.85": 2.0
+        }
+      },
+      "common_b": 8.0,
+      "EVPI": 186177.90766775678,
+      "VSS_op": 49094.54916102602
+    },
+    "ercot_2023": {
+      "npv_at_common_b": {
+        "EEV_single": 2092750.1379264956,
+        "RP_ensemble": 2125388.3923925827,
+        "WS_oracle": 2207341.3461414883
+      },
+      "b_star": {
+        "EEV_single": 8.0,
+        "RP_ensemble": 8.0,
+        "WS_oracle": 8.0
+      },
+      "cvar_b_star": {
+        "EEV_single": {
+          "0": 8.0,
+          "0.5": 2.0,
+          "0.85": 0.5
+        },
+        "RP_ensemble": {
+          "0": 8.0,
+          "0.5": 2.0,
+          "0.85": 0.5
+        }
+      },
+      "common_b": 8.0,
+      "EVPI": 81952.95374890557,
+      "VSS_op": 32638.25446608709
+    }
+  }
+}

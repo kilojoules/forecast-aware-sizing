@@ -99,6 +99,7 @@ def run_year(year: int):
                     "arb_rev": float(np.sum(p_real * a_sched)),
                     "wind_da_rev": float(np.sum(p_real * w_fcst)),
                     "imb_abs": float(np.sum(np.abs(residual))),
+                    "p_dot_r": float(np.sum(p_real * residual)),
                 })
             print(f"  g={gamma} rho={rho} {pol:8s} |w_err|={err:.3f} "
                   f"({time.time()-t0:.1f}s last cell)")

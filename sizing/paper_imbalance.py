@@ -136,7 +136,16 @@ def dispatch_chunked(prices_real, p_fcst, w_real, w_fcst, b_E, b_P):
 def run_cell(prices_real, p_fcst_single, p_fcst_ens_mean,
              w_real, w_fcst_single, w_fcst_ens_mean,
              b_E: float, b_P: float):
-    """One b_E, both policies. Returns dict policy -> {arb, wind_da, imb_abs}."""
+    """One b_E, both policies.
+
+    p_dot_r = sum(DA_t * r_t) values the residual energy at DA, so that
+    arb_rev + wind_da_rev + p_dot_r = DA * delivered energy. Without it
+    the model pays DA for committed-but-undelivered energy and charges
+    only the penalty for the miss -- a money pump for any bidder that
+    systematically overbids. The symmetric settlement model is
+    DA * delivered - lambda * |r|, i.e. NPV uses
+    (arb_rev + wind_da_rev + p_dot_r - lambda * imb_abs).
+    """
     out = {}
     for name, p_fcst, w_fcst in [
         ("single", p_fcst_single, w_fcst_single),
@@ -147,8 +156,9 @@ def run_cell(prices_real, p_fcst_single, p_fcst_ens_mean,
         arb_rev = float(np.sum(prices_real * a_sched))
         wind_da_rev = float(np.sum(prices_real * w_fcst))
         imb_abs = float(np.sum(np.abs(residual)))
+        p_dot_r = float(np.sum(prices_real * residual))
         out[name] = {"arb_rev": arb_rev, "wind_da_rev": wind_da_rev,
-                     "imb_abs": imb_abs}
+                     "imb_abs": imb_abs, "p_dot_r": p_dot_r}
     return out
 
 
@@ -187,13 +197,15 @@ def run_year(year: int):
         for lam in LAMBDA_GRID:
             for pol in ("single", "ensemble"):
                 c = cell[pol]
-                op = c["arb_rev"] + c["wind_da_rev"] - lam * c["imb_abs"]
+                op = (c["arb_rev"] + c["wind_da_rev"] + c["p_dot_r"]
+                      - lam * c["imb_abs"])
                 npv = DISC * op - CAPEX_E * b_E - CAPEX_P * B_P
                 rows.append({
                     "b_E": b_E, "lambda": lam, "policy": pol,
                     "arb_rev": c["arb_rev"],
                     "wind_da_rev": c["wind_da_rev"],
                     "imb_abs": c["imb_abs"],
+                    "p_dot_r": c["p_dot_r"],
                     "imb_cost": lam * c["imb_abs"],
                     "op_profit": op, "npv": npv,
                 })
