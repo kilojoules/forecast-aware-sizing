@@ -14,14 +14,14 @@
 
 \title{When does dispatch fidelity matter for battery sizing?\\
 A regime-classification diagnostic}
-\author{Julian Quick \\ \small{Lawrence Berkeley National Laboratory}}
+\author{Julian Quick \\ \small{Technical University of Denmark / Lawrence Berkeley National Laboratory}}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Tesla Autobidder, Fluence Mosaic, and W\"{a}rtsil\"{a} GEMS run battery dispatch on machine-learning-driven stochastic optimization. NREL REopt, DTU \texttt{hydesign}, and most academic hybrid-power-plant sizing tools embed deterministic LP inner dispatch. Should sizing tools change architecture? We propose a practitioner-runnable regime-classification diagnostic --- the $b_{\mathrm{sat}}^{\epsilon}$ overlap test --- that any operator can compute on one year of price data to answer the question for their own market. The diagnostic returns ``invariance survives'' on synthetic AR(1), all three years of Danish DK1 (Energinet, including the 2022 European energy crisis with max \euro 871/MWh), and all three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri with sustained \$9000/MWh price-cap hours). Despite stochastic dispatch yielding $0.9$--$37\%$ realized-NPV uplift at the optimum, the optimal battery energy capacity $b_E^*$ is invariant across deterministic vs.\ multi-lag-ensemble dispatch in every (market, year, cost-form) configuration tested at $\lambda = 0$ (the pure-merchant limit). We sketch a theoretical proposition motivating the diagnostic, then test its prediction empirically: it predicted that multi-day spectral content should break invariance; the data falsify the prediction. Extending the model to a wind + 1-MW battery HPP with imbalance settlement at penalty $\lambda$ EUR/MWh on residual wind-forecast error recovers a break-point $\lambda^*$ that falls from $>500$ EUR/MWh at wind/battery ratio 2 to a saturation near $50$ EUR/MWh at ratios $\geq 10$; at ratio 5 and $\lambda = 100$, single-forecast sizing picks $b_E^* = 24$ MWh vs.\ ensemble $16$ MWh. Settling the same plant against \emph{actual} DK1 imbalance prices (eSett, 2021--2023) yields effective penalties of only $11$--$28$ EUR/MWh --- below the break-point at every configuration tested; optimal capacity stays invariant under real settlement even through the 2022 crisis. The March-2025 Nordic balancing reforms lifted mean up-regulation spreads to $92$--$123$ EUR/MWh, at or above $\lambda^*$: wind-heavy DK1 hybrid plants now sit in the regime where forecast quality drives sizing. We release the benchmark (\texttt{forecast-aware-sizing}) and the diagnostic for replication on any market.
+Tesla Autobidder, Fluence Mosaic, and W\"{a}rtsil\"{a} GEMS run battery dispatch on machine-learning-driven stochastic optimization. NREL REopt, DTU \texttt{hydesign}, and most academic hybrid-power-plant sizing tools embed deterministic LP inner dispatch. Should sizing tools change architecture? We propose a practitioner-runnable regime-classification diagnostic --- the $b_{\mathrm{sat}}^{\epsilon}$ overlap test --- that any operator can compute on one year of price data to answer the question for their own market. The diagnostic returns ``invariance survives'' on synthetic AR(1), all three years of Danish DK1 (Energinet, including the 2022 European energy crisis with max \euro 871/MWh), and all three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri with sustained \$9000/MWh price-cap hours). Despite better-informed dispatch yielding $0.9$--$37\%$ realized-NPV uplift at the optimum, the optimal battery energy capacity $b_E^*$ is invariant across point-forecast, ensemble, scenario-stochastic, and max-min-robust dispatch in every (market, year, cost-form) configuration tested at $\lambda = 0$ (the pure-merchant limit). The equality is statistically informative, not a plateau artifact: NPV drops $3$--$85\%$ per factor-two mis-sizing, and the expected bootstrap regret of building at the wrong policy's argmax is $\leq 1\%$ of NPV in five of six market-years (weakest: ERCOT 2021, Storm Uri). We sketch a theoretical proposition motivating the diagnostic, then test its prediction empirically: it predicted that multi-day spectral content should break invariance; the data falsify the prediction. Extending the model to a wind + 1-MW battery HPP with imbalance settlement at penalty $\lambda$ EUR/MWh on residual wind-forecast error recovers a break-point $\lambda^*$ that falls from $>500$ EUR/MWh at wind/battery ratio 2 to a saturation near $50$ EUR/MWh at ratios $\geq 10$; at ratio 5 and $\lambda = 100$, single-forecast sizing picks $b_E^* = 24$ MWh vs.\ ensemble $16$ MWh. Settling the same plant against \emph{actual} DK1 imbalance prices (eSett, 2021--2023) yields effective penalties of only $11$--$28$ EUR/MWh --- below the break-point at every configuration tested; optimal capacity stays invariant under real settlement even through the 2022 crisis. The March-2025 Nordic balancing reforms lifted mean up-regulation spreads to $92$--$123$ EUR/MWh, at or above $\lambda^*$: wind-heavy DK1 hybrid plants now sit in the regime where forecast quality drives sizing. We release the benchmark (\texttt{forecast-aware-sizing}) and the diagnostic for replication on any market.
 \end{abstract}
 
 \section{Introduction}
@@ -42,7 +42,7 @@ We motivate the diagnostic with a theoretical sketch (\S\ref{sec:theory}), then 
 \item ERCOT HB\_NORTH day-ahead prices for 2021/2022/2023, including February 2021 Storm Uri (sustained \$9000/MWh price-cap hours, kurtosis 165).
 \end{itemize}
 
-Under the persistence-ensemble baseline, the diagnostic returns ``invariance survives'' in every (market, year): $b_E^*$ is identical across deterministic and stochastic dispatch policies, even though stochastic dispatch yields $0.9$--$37\%$ realized-NPV uplift. Three orthogonal stress tests on LUMI HPC --- a 2-D $(b_E, b_P)$ sweep, a richer quantile-regression ensemble (K=20 quantile samples), and a scenario stochastic LP (N=50 scenarios) --- broaden the test, and a post-hoc max-min robust policy varies the decision attitude (it preserves the argmax in 5 of 6 regimes and lands on the quadratic policies' optimum in the sixth). \textbf{17 of 18 pre-registered regimes return ``invariance survives''. The single break is DK1 2022 under the quantile-regression ensemble} (the highest-volatility year combined with the most-informative ensemble) where $b_E^*$ shifts $4 \to 8$ MWh between the linear-single policy and the others. The diagnostic correctly fires ``disjoint'' there. The proposition's regime-shift prediction, falsified at the persistence-ensemble level, is partially recovered under richer forecasts on the most-stressed regime --- which is the operationally-correct behaviour for a regime classifier.
+Under the persistence-ensemble baseline, the diagnostic returns ``invariance survives'' in every (market, year): $b_E^*$ is identical across deterministic and stochastic dispatch policies, even though stochastic dispatch yields $0.9$--$37\%$ realized-NPV uplift. Three orthogonal stress tests on LUMI HPC --- a 2-D $(b_E, b_P)$ sweep, a richer quantile-regression ensemble (K=20 quantile samples), and a scenario stochastic LP (N=50 scenarios) --- broaden the test, and a post-hoc max-min robust policy varies the decision attitude (it preserves the argmax in 5 of 6 regimes and lands on the quadratic policies' optimum in the sixth). \textbf{17 of 18 stress-test regimes return ``invariance survives''. The single break is DK1 2022 under the quantile-regression ensemble} (the highest-volatility year combined with the most-informative ensemble) where $b_E^*$ shifts $4 \to 8$ MWh between the linear-single policy and the others. The diagnostic correctly fires ``disjoint'' there. The proposition's regime-shift prediction, falsified at the persistence-ensemble level, is partially recovered under richer forecasts on the most-stressed regime --- which is the operationally-correct behaviour for a regime classifier.
 
 \paragraph{Implication for practice.} Across the markets and regimes tested, deterministic-LP-inner-dispatch in academic sizing tools is empirically robust on the question those tools answer --- recommended capacity. Operational stochastic-dispatch (Tesla / Fluence / W\"{a}rtsil\"{a}) is independently justified by the realized-NPV uplift. The architectural divergence is empirically supported, and any operator can verify it for their market by running the diagnostic.
 
@@ -93,7 +93,7 @@ ERCOT N. & 2023 & USD/MWh & 55.5   & 218.7  & 1.1     & 4200.0 & 177.5 \\
 
 \subsection{Sizing model}
 
-Lifetime NPV $= R_{\mathrm{annual}} \sum_{y=0}^{14} (1.07)^{-y} - C_E b_E - C_P b_P - \mathrm{repl}$. $C_E = 100$k currency-units / MWh, $C_P = 75$k currency-units / MW. 15-yr lifetime, 7\% discount. Replacements pay only the energy component; PCS reused.
+Baseline lifetime NPV $= R_{\mathrm{annual}} \sum_{y=0}^{14} (1.07)^{-y} - C_E b_E - C_P b_P$. $C_E = 100$k currency-units / MWh, $C_P = 75$k currency-units / MW. 15-yr lifetime, 7\% discount. All argmax results in this paper use this replacement-free form. Rainflow degradation $D$ is computed for every cell; a replacement-inclusive NPV (replace the energy component each time cumulative $D$ consumes a 20\% loss-of-health budget, discounted; PCS reused) is reported as a post-hoc robustness check in \S\ref{sec:stress}.
 
 \section{Theory}\label{sec:theory}
 
@@ -204,8 +204,10 @@ This is a clean negative result for the regime-shift prediction and a positive r
 \subsection{Stress tests: 2-D sweep, quantile-regression ensemble, scenario SLP, max-min robust}\label{sec:stress}
 
 The 1-D / multi-lag-persistence baseline is one slice of the design
-space. Three pre-registered stress tests on LUMI HPC probe robustness;
-a fourth, post-hoc test varies the decision attitude.
+space. Three stress tests on LUMI HPC probe robustness (designed after
+the pre-registered factorial; the pre-registration covers the factorial
+only); post-hoc tests then vary the decision attitude, the statistical
+resampling, and the NPV form.
 
 \paragraph{2-D $(b_E, b_P)$ sweep.} 30 $(b_P, b_E)$ configurations
 $b_P \in \{0.25, 0.5, 1, 2, 4\}$ MW $\times$ $b_E \in \{1, 2, 4, 8, 16, 32\}$
@@ -251,9 +253,11 @@ ERCOT N. & 2023 & 8 & 8 & 8 & 8 \\
 \paragraph{Scenario stochastic LP (SLP).} Two-stage rolling-horizon
 SLP with N=50 scenarios per 24-h window, scenarios drawn from the
 empirical (DA - DA(t-24h)) residual pool. \emph{Result:} SLP $b_E^*$
-matches the multi-lag-ensemble argmax in all 6 regimes (DK1 2021 $\to$
+matches the linear policies' argmax in all 6 regimes (DK1 2021 $\to$
 4, DK1 2022 $\to$ 8, DK1 2023 $\to$ 4, ERCOT 2021 $\to$ 4, ERCOT 2022
-$\to$ 8, ERCOT 2023 $\to$ 8). SLP NPV is lower than full-horizon LP
+$\to$ 8, ERCOT 2023 $\to$ 8); at ERCOT 2021 this sits one grid step
+below the full-horizon QP argmax (4 vs 8) --- the cost-form asymmetry
+cell again. SLP NPV is lower than full-horizon LP
 by 5--30\%, consistent with the rolling-horizon vs perfect-foresight
 gap; the sizing recommendation, however, is the same. See
 Figure~\ref{fig:slp}.
@@ -278,6 +282,42 @@ factorial already produced. No new sizing regime opens. NPV at the
 robust argmax sits $3$--$14\%$ below the ensemble policy's (the price
 of hedging across members), consistent with the operational ordering
 ensemble $\geq$ max-min $>$ single.
+
+\paragraph{Statistical robustness of the argmax (post hoc).} Argmax
+equality on a doubling $b_E$ grid is only informative if the NPV
+surface is steep at grid scale and the equality survives sampling
+noise. Both checks pass, with one localized exception. \emph{Plateau
+steepness:} mis-sizing by a factor of two (one grid step) costs
+$3$--$85\%$ of optimal NPV depending on regime and direction --- the
+surface is not flat at the resolution the argmax is reported, so
+coincidence is informative. \emph{Sampling noise:} a paired block
+bootstrap (resampling the seven 8-week chunks, $B = 2000$, identical
+resamples for both policies) gives $P(b_E^{*,\mathrm{single}} =
+b_E^{*,\mathrm{ens}})$ of $0.91/0.67/0.98$ on DK1 2021/2022/2023 and
+$0.66/0.98/0.98$ on ERCOT 2021/2022/2023, with all bootstrap argmax
+mass on adjacent grid points. The decision-relevant summary is the
+bootstrap \emph{regret} --- the NPV cost of building at the
+single-forecast argmax and operating with the ensemble --- whose mean
+is $\leq 1.0\%$ of optimal NPV in five of six regimes. The exception
+is ERCOT 2021 (Storm Uri): mean regret $10.0\%$, 95th percentile
+$47\%$. One year of a spike-dominated market is statistically thin for
+sizing; the invariance claim is correspondingly weakest there, the
+same cell the cost-form asymmetry and the max-min test flag.
+
+\paragraph{NPV-form robustness: replacement scheduling (post hoc).}
+Adding the discounted replacement term of \S\ref{sec:setup} to every
+stored $(R, D)$ cell shifts the argmax in 6 of 24 (market, year,
+policy) cells. In four of those six the paired policies move
+\emph{together} (DK1 2021 linear: both $4 \to 2$; ERCOT 2022 linear:
+both $8 \to 4$), preserving invariance. Two cells break the pairing:
+DK1 2021 quadratic-single ($4 \to 0.5$ while quadratic-ensemble stays
+at 4) and ERCOT 2021 linear-single ($4 \to 8$ while linear-ensemble
+stays at 4) --- both in low-NPV or Uri-stressed regimes where the
+replacement cost is large relative to a shallow optimum. Pairwise
+invariance therefore survives the replacement-inclusive NPV in 10 of
+12 (market, year, cost-form) pairs. The replacement term is a real
+fragility axis at shallow optima, and we report the baseline results
+in the replacement-free form throughout.
 
 \begin{figure}[t]
 \centering
@@ -359,7 +399,7 @@ Figure~\ref{fig:timeseries} shows all four policies on the DK1 2022 spike week (
 We had a theoretical reason to expect DK1 and ERCOT spectral content to break invariance. They did not. Three candidate mechanisms we did not isolate:
 
 \begin{itemize}
-\item \textbf{Replacement scheduling absorbs the tilt.} Cycling depth differs by capacity in a way that changes the integer-valued replacement schedule across policies; the discrete steps push back against an otherwise-tilted lift.
+\item \textbf{Grid-scale plateaus around shallow optima.} Where the optimum is shallow, an NPV tilt smaller than one grid step is invisible to the argmax. The post-hoc bootstrap (\S\ref{sec:stress}) bounds this: surfaces are steep at grid scale ($3$--$85\%$ per step) in most regimes, but the lowest-NPV cells are exactly where the replacement-inclusive NPV form was able to move the argmax.
 \item \textbf{Power-capacity bottleneck.} With $b_P = 1$ MW fixed, longer-period arbitrage requires longer to charge/discharge, capping the extra revenue larger batteries can extract. The multi-day arbitrage opportunities require slow accumulation that hits the $b_P$ ceiling before the $b_E$ ceiling.
 \item \textbf{Forecast resolution at long timescales is uniformly bad.} If both single and ensemble policies fail at multi-day timescales, neither captures multi-day arbitrage; bigger batteries help neither. Improving forecasts at long timescales (probabilistic ML weather forecasts) might expose a sizing shift this study did not detect.
 \end{itemize}
@@ -387,7 +427,7 @@ The takeaway is that \emph{forecast quality drives sizing at intermediate $\lamb
 \caption{\label{fig:imbalance}Imbalance-penalty break-point study (DK1, 5-MW-peak wind + 1-MW battery). Top row: $b_E^*$ vs $\lambda$ for single-forecast (blue circles) and K=4 multi-lag ensemble (orange squares) policies. At $\lambda = 0$ argmax invariance holds; at $\lambda = 100$ EUR/MWh the same pattern appears in every year (single $24$ MWh, ensemble $16$ MWh); at $\lambda \geq 200$ both shift upward together. Bottom row: NPV curves at $\lambda = 100$ (the universal break-point); dotted verticals mark each policy's argmax, showing the $24/16$ MWh gap visually. Ensemble dominates NPV by $0.3$--$1.3$M\euro\ at its argmax.}
 \end{figure}
 
-\paragraph{Where real DK1 settlement sits.} The break-point $\lambda^*$ where single and ensemble $b_E^*$ diverge is the diagnostic for whether forecast quality drives sizing in a given market. The $\lambda = 0$ result of \S\ref{sec:results}--\S\ref{sec:stress} is the pure-merchant limit; real markets sit at $\lambda > 0$. To locate DK1, we replace the constant $\lambda$ with the \emph{actual} hourly imbalance settlement from eSett \citep{esett2026}, settling the same hourly residuals under both the two-price production regime (in force for Danish production BRPs until November 2021) and the one-price regime (in force since): two-price cost $= \max(P^{\mathrm{up}}_t - P^{\mathrm{DA}}_t, 0)\,\max(-r_t, 0) + \max(P^{\mathrm{DA}}_t - P^{\mathrm{down}}_t, 0)\,\max(r_t, 0)$; one-price cost $= r_t (P^{\mathrm{DA}}_t - P^{\mathrm{imb}}_t)$. The effective penalty $\lambda_{\mathrm{eff}} = \sum_t \mathrm{cost}_t / \sum_t |r_t|$ maps real settlement back onto the synthetic $\lambda$ axis.
+\paragraph{Where real DK1 settlement sits.} The break-point $\lambda^*$ where single and ensemble $b_E^*$ diverge is the diagnostic for whether forecast quality drives sizing in a given market. The $\lambda = 0$ result of \S\ref{sec:results}--\S\ref{sec:stress} is the pure-merchant limit; real markets sit at $\lambda > 0$. To locate DK1, we replace the constant $\lambda$ with the \emph{actual} hourly imbalance settlement from eSett \citep{esett2026}, settling the same hourly residuals under both the two-price production regime (in force for Danish production BRPs until November 2021) and the one-price regime (in force since): two-price cost $= \max(P^{\mathrm{up}}_t - P^{\mathrm{DA}}_t, 0)\,\max(-r_t, 0) + \max(P^{\mathrm{DA}}_t - P^{\mathrm{down}}_t, 0)\,\max(r_t, 0)$; one-price cost $= r_t (P^{\mathrm{DA}}_t - P^{\mathrm{imb}}_t)$. The effective penalty $\lambda_{\mathrm{eff}} = \sum_t \mathrm{cost}_t / \sum_t |r_t|$ maps real settlement back onto the synthetic $\lambda$ axis. (The eSett series begins 26 January 2021, so the 2021 run covers 8{,}136 hours rather than the full year; 2022 and 2023 are complete. Hours with missing settlement prices settle at DA, i.e.\ zero penalty.)
 
 Figure~\ref{fig:realimbalance} (left) shows the result: $\lambda_{\mathrm{eff}}$ (two-price) is $10.9$ / $27.7$ / $14.9$ EUR/MWh for 2021/2022/2023 ($3.4$--$8.5$ under one-price, where system-helping imbalances earn), a factor $4$--$9$ below $\lambda^* \approx 100$ at the reported configuration --- \emph{even in the crisis year}. Under real settlement the argmax is invariant in every year and both settlement regimes ($b_E^* = 4/8/4$ MWh, identical across policies and identical to the $\lambda = 0$ optimum), while the ensemble still earns $0.7$--$1.9$\,M\euro\ more NPV at the same capacity. This is stronger than comparing means: real imbalance spreads are heavy-tailed (hourly $|P^{\mathrm{imb}} - P^{\mathrm{DA}}|$ exceeded $100$ EUR/MWh in $16.5\%$ of 2022 hours) and correlated with the wind-forecast errors being settled, and the realized joint distribution still does not move the argmax. Deterministic-LP-inner sizing was empirically safe in DK1 throughout 2021--2023, at every wind/battery ratio tested, and the diagnostic classifies it correctly.
 
@@ -421,7 +461,7 @@ The most consequential limitation is (2): a richer wind ensemble might move the 
 
 \section{Conclusion}
 
-We propose a regime-classification diagnostic for whether dispatch fidelity matters for battery sizing on a given market: the $b_{\mathrm{sat}}^\epsilon$ overlap test. The diagnostic is practitioner-runnable on one year of historical price data; it is falsifiable; and it survives independently of the theoretical proposition that motivates it. We test the diagnostic on synthetic, three years of DK1 (Energinet, including 2022 European energy crisis), and three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri). On every regime tested the diagnostic returns ``invariance survives'': $b_E^*$ is invariant across deterministic and stochastic dispatch, despite $0.9$--$37\%$ realized-NPV uplift at the optimum. The proposition predicted regime-dependent invariance breaking on multi-day spectral content; the data falsify the prediction. Coupling wind and imbalance settlement recovers the boundary of the invariance regime: a break-point $\lambda^*$ saturating near $50$ EUR/MWh for wind-heavy plants. Settling against actual DK1 imbalance prices shows the market sat a factor $4$--$9$ below that boundary through 2021--2023 --- deterministic-LP sizing was empirically safe in Denmark through the crisis, exactly as the diagnostic classifies --- while the March-2025 Nordic balancing reforms have since lifted mean up-regulation spreads to or above $\lambda^*$ for wind-heavy configurations. The architectural divergence between commercial operational platforms (Tesla / Fluence / W\"{a}rtsil\"{a}, all stochastic) and academic sizing tools (\texttt{hydesign} / \texttt{REopt} / \texttt{PyPSA}, all deterministic LP inner) is empirically supported across the regimes tested, with its boundary now mapped.
+We propose a regime-classification diagnostic for whether dispatch fidelity matters for battery sizing on a given market: the $b_{\mathrm{sat}}^\epsilon$ overlap test. The diagnostic is practitioner-runnable on one year of historical price data; it is falsifiable; and it survives independently of the theoretical proposition that motivates it. We test the diagnostic on synthetic, three years of DK1 (Energinet, including 2022 European energy crisis), and three years of ERCOT North Hub (gridstatus, including February 2021 Storm Uri). On every regime tested the diagnostic returns ``invariance survives'': $b_E^*$ is invariant across deterministic point-forecast, ensemble, scenario-stochastic, and max-min-robust dispatch, despite $0.9$--$37\%$ realized-NPV uplift at the optimum. The proposition predicted regime-dependent invariance breaking on multi-day spectral content; the data falsify the prediction. Coupling wind and imbalance settlement recovers the boundary of the invariance regime: a break-point $\lambda^*$ saturating near $50$ EUR/MWh for wind-heavy plants. Settling against actual DK1 imbalance prices shows the market sat a factor $4$--$9$ below that boundary through 2021--2023 --- deterministic-LP sizing was empirically safe in Denmark through the crisis, exactly as the diagnostic classifies --- while the March-2025 Nordic balancing reforms have since lifted mean up-regulation spreads to or above $\lambda^*$ for wind-heavy configurations. The architectural divergence between commercial operational platforms (Tesla / Fluence / W\"{a}rtsil\"{a}, all stochastic) and academic sizing tools (\texttt{hydesign} / \texttt{REopt} / \texttt{PyPSA}, all deterministic LP inner) is empirically supported across the regimes tested, with its boundary now mapped.
 
 \paragraph{Reproducibility.}
 Benchmark, four dispatch policies, multi-lag ensemble, sizing harness, pre-registration commits, and ERCOT + DK1 loaders are in \texttt{forecast-aware-sizing} at \url{https://github.com/kilojoules/forecast-aware-sizing} (commit hash in repo).

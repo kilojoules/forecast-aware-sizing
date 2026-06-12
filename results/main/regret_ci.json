@@ -1,0 +1,301 @@
+{
+  "meta": {
+    "n_boot": 2000,
+    "seed": 0,
+    "policies": "linear single/ensemble",
+    "B_E": [
+      0.5,
+      1,
+      2,
+      4,
+      8,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96,
+      128,
+      192,
+      256
+    ]
+  },
+  "repl_audit": {
+    "dk1_2021_linear_single": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 2.0
+    },
+    "dk1_2021_linear_ensemble": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 2.0
+    },
+    "dk1_2021_quadratic_single": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 0.5
+    },
+    "dk1_2021_quadratic_ensemble": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "dk1_2022_linear_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "dk1_2022_linear_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "dk1_2022_quadratic_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "dk1_2022_quadratic_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "dk1_2023_linear_single": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "dk1_2023_linear_ensemble": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "dk1_2023_quadratic_single": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "dk1_2023_quadratic_ensemble": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "ercot_2021_linear_single": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2021_linear_ensemble": {
+      "b_E_star": 4.0,
+      "b_E_star_repl": 4.0
+    },
+    "ercot_2021_quadratic_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2021_quadratic_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2022_linear_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 4.0
+    },
+    "ercot_2022_linear_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 4.0
+    },
+    "ercot_2022_quadratic_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2022_quadratic_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2023_linear_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2023_linear_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2023_quadratic_single": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    },
+    "ercot_2023_quadratic_ensemble": {
+      "b_E_star": 8.0,
+      "b_E_star_repl": 8.0
+    }
+  },
+  "regimes": {
+    "dk1_2021": {
+      "point": {
+        "single": 4.0,
+        "ensemble": 4.0
+      },
+      "p_equal": 0.9105,
+      "argmax_dist": {
+        "single": {
+          "2": 0.0375,
+          "4": 0.9625
+        },
+        "ensemble": {
+          "2": 0.004,
+          "4": 0.94,
+          "8": 0.056
+        }
+      },
+      "regret": {
+        "half": 0.36918605315595415,
+        "double": 0.38892324751353213,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.01006363684629008,
+        "p95": 0.0662186001744614,
+        "max": 0.32177626216217586
+      }
+    },
+    "dk1_2022": {
+      "point": {
+        "single": 8.0,
+        "ensemble": 8.0
+      },
+      "p_equal": 0.669,
+      "argmax_dist": {
+        "single": {
+          "4": 0.4905,
+          "8": 0.5095
+        },
+        "ensemble": {
+          "4": 0.1595,
+          "8": 0.8405
+        }
+      },
+      "regret": {
+        "half": 0.05635930482169692,
+        "double": 0.3763255695956277,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.010442391647880243,
+        "p95": 0.05031707793698895,
+        "max": 0.07069574907473572
+      }
+    },
+    "dk1_2023": {
+      "point": {
+        "single": 4.0,
+        "ensemble": 4.0
+      },
+      "p_equal": 0.983,
+      "argmax_dist": {
+        "single": {
+          "2": 0.02,
+          "4": 0.98
+        },
+        "ensemble": {
+          "2": 0.003,
+          "4": 0.997
+        }
+      },
+      "regret": {
+        "half": 0.35543779522671903,
+        "double": 0.324088614676756,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.0036929440713628905,
+        "p95": 0.0,
+        "max": 0.2894633227457837
+      }
+    },
+    "ercot_2021": {
+      "point": {
+        "single": 4.0,
+        "ensemble": 4.0
+      },
+      "p_equal": 0.6555,
+      "argmax_dist": {
+        "single": {
+          "1": 0.009,
+          "2": 0.0535,
+          "4": 0.651,
+          "8": 0.0125,
+          "128": 0.274
+        },
+        "ensemble": {
+          "1": 0.005,
+          "2": 0.0485,
+          "4": 0.541,
+          "8": 0.1315,
+          "96": 0.2115,
+          "128": 0.0625
+        }
+      },
+      "regret": {
+        "half": 0.3170209165925829,
+        "double": 0.03362458451537461,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.09999293040821548,
+        "p95": 0.4684144479194429,
+        "max": 0.5648391240030292
+      }
+    },
+    "ercot_2022": {
+      "point": {
+        "single": 8.0,
+        "ensemble": 8.0
+      },
+      "p_equal": 0.9765,
+      "argmax_dist": {
+        "single": {
+          "2": 0.029,
+          "4": 0.4555,
+          "8": 0.5155
+        },
+        "ensemble": {
+          "2": 0.023,
+          "4": 0.446,
+          "8": 0.531
+        }
+      },
+      "regret": {
+        "half": 0.0361353385603946,
+        "double": 0.8536381605209004,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.00025732750244081536,
+        "p95": 0.0,
+        "max": 0.05040260714807456
+      }
+    },
+    "ercot_2023": {
+      "point": {
+        "single": 8.0,
+        "ensemble": 8.0
+      },
+      "p_equal": 0.9785,
+      "argmax_dist": {
+        "single": {
+          "0.5": 0.001,
+          "1": 0.005,
+          "2": 0.047,
+          "4": 0.1575,
+          "8": 0.7895
+        },
+        "ensemble": {
+          "0.5": 0.0005,
+          "1": 0.0055,
+          "2": 0.0355,
+          "4": 0.1595,
+          "8": 0.799
+        }
+      },
+      "regret": {
+        "half": 0.20623332447168935,
+        "double": 0.3519578845970017,
+        "cross_policy": 0.0
+      },
+      "boot_cross_regret": {
+        "mean": 0.0004639244036408273,
+        "p95": 0.0,
+        "max": 0.0701627055878928
+      }
+    }
+  }
+}
