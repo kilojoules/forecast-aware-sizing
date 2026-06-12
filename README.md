@@ -13,10 +13,10 @@ decisions:
   stochastic dispatcher… until one thing enters the picture: a
   **penalty for energy you promised but didn't deliver**.
 
-Once that imbalance penalty exceeds a break-point (≈50–100 €/MWh,
-depending on how much wind you have per MW of battery), better
-forecasts buy you a *smaller battery* — up to 33% less capacity for
-the same job:
+Once that imbalance penalty enters the divergence band (opening around
+25–35 €/MWh in normal years, and as low as 10–15 €/MWh in the 2022
+crisis year for wind-heavy plants), better forecasts buy you a
+*smaller battery* — up to half the capacity for the same job:
 
 ![NPV at the optimal size vs the penalty for energy promised but not delivered. Grey bands: where a cheap forecast and a good forecast disagree on the best battery size.](paper/figures/fig_readme_npv.png)
 
@@ -26,12 +26,14 @@ forecast (orange). In the grey bands the two pick different optimal
 sizes — that's where forecast quality drives the capacity decision.*
 
 **Where does reality sit?** We settled the same plant against *actual*
-Danish (DK1) imbalance prices. In 2021–2023 the effective penalty was
-only 11–28 €/MWh — below the break-point even during the 2022 energy
-crisis, so cheap-forecast sizing got the capacity right. Then the
-March-2025 Nordic balancing reforms lifted average up-regulation
-spreads to 92–123 €/MWh — **wind-heavy plants crossed the line**, into
-the regime where forecast quality decides how big a battery to build:
+Danish (DK1) imbalance prices (effective penalty 11–28 €/MWh in
+2021–2023). In normal years, cheap-forecast sizing got the capacity
+right at every plant configuration tested. In the 2022 crisis year,
+**wind-heavy plants split: the cheap forecast buys 8 MWh where the
+ensemble buys 4** under real two-price settlement. The March-2025
+Nordic balancing reforms sustain crisis-level spreads (92–123 €/MWh
+average up-regulation) — the regime 2022 previewed is plausibly the
+new normal:
 
 (Measured per plant configuration and against both real settlement
 regimes — see `paper/figures/fig_paper_real_imbalance.png` and §5.2 of
@@ -129,7 +131,9 @@ Full writeup: `paper/paper.pdf` (18 pages, submission draft).
 | Imbalance-penalty break-point (5 MW wind + 1 MW battery, DK1) | $\lambda^* \approx 100$ EUR/MWh on **all 3 years**; single $24$ MWh, ensemble $16$ MWh |
 | Break-point vs wind/battery ratio (W = 1/2/5/10/20 MW) | non-increasing, **saturates ≈50 €/MWh** for ratios ≥ 10 |
 | Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**, below break-point; **sizing invariant all 3 years** |
-| Settlement-aware reserve dispatch (ρ ≤ 0.3) + single-site wind errors (γ ≤ 3) | reserve never pays below λ=500, bands unchanged; band onset never drops below **50 €/MWh** |
+| Settlement-aware reserve dispatch (ρ ≤ 0.3) + single-site wind errors (γ ≤ 3) | reserve never pays below λ=500, bands unchanged; single-site errors push the **crisis-year** band into the realized-spread range |
+| Real settlement at wind-heavy ratios (10:1, 20:1) | normal years invariant; **2022 splits: single 8 MWh vs ensemble 4 MWh** (two-price) |
+| Quantile (newsvendor) wind bidding from the K=4 ensemble | within ±0.5% NPV of mean bidding; bands unchanged (member spread too narrow) |
 | Operational stochastic-dispatch realized-NPV uplift at $b_E^*$ | **0.9–37%** across (market, year) |
 
 ## Repo layout

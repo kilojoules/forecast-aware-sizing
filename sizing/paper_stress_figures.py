@@ -266,7 +266,7 @@ def figure_hydesign(out: str = str(FIGURES / "fig_paper_hydesign.png")):
 # Imbalance-penalty sweep from ../results/imbalance/dk1_*.json
 # -----------------------------------------------------------------------------
 def figure_imbalance(out: str = str(FIGURES / "fig_paper_imbalance.png")):
-    files = sorted(glob.glob(str(RESULTS / "imbalance" / "dk1_*.json")))
+    files = sorted(glob.glob(str(RESULTS / "imbalance" / "dk1_????.json")))
     if not files:
         print("no results_imbalance files; skipping")
         return

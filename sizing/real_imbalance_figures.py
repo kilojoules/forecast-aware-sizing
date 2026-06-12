@@ -43,7 +43,7 @@ def divergence_segments(rows):
     cells = {}
     for r in rows:
         cells[(r["b_E"], r["policy"])] = (r["arb_rev"], r["wind_da_rev"],
-                                          r["imb_abs"])
+                                          r["imb_abs"], r["p_dot_r"])
     bEs = sorted({k[0] for k in cells})
     diverged = []
     for lam in FINE_LAMBDAS:
@@ -51,6 +51,7 @@ def divergence_segments(rows):
         for pol in ("single", "ensemble"):
             b[pol] = max(
                 (DISC * (cells[(bE, pol)][0] + cells[(bE, pol)][1]
+                         + cells[(bE, pol)][3]
                          - lam * cells[(bE, pol)][2])
                  - CAPEX_E * bE - CAPEX_P, bE) for bE in bEs)[1]
         diverged.append(b["single"] > b["ensemble"])
@@ -118,8 +119,8 @@ def main(out: Path):
     ax2.set_xlabel(r"imbalance penalty $\lambda$ (€/MWh)", fontsize=10)
     ax2.set_ylabel("wind/battery capacity ratio", fontsize=10)
     ax2.set_title("Where single-forecast sizing exceeds ensemble sizing\n"
-                  "(thick segments; persistent band opens at 45–70 for "
-                  "ratios ≥ 10)", fontsize=10)
+                  "(thick segments; bands reach 10–35 €/MWh in the crisis "
+                  "year at wind-heavy ratios)", fontsize=10)
     handles, labels = ax2.get_legend_handles_labels()
     seen = dict(zip(labels, handles))
     ax2.legend(seen.values(), seen.keys(), loc="upper left", fontsize=8)
