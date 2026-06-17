@@ -80,6 +80,49 @@ capacity.
 
 ---
 
+## Two loops: scheduling vs sizing
+
+Battery economics is two nested optimizations, and this repo is about
+whether they can be **decoupled**:
+
+- **Inner loop — scheduling (dispatch).** Given a *fixed* battery, how
+  to operate it hour to hour under uncertain prices and wind.
+  Re-solved continuously in production. This is where forecast quality
+  and stochastic optimization live (Tesla Autobidder, Fluence Mosaic,
+  Wärtsilä GEMS). It sets your **operating revenue**.
+- **Outer loop — sizing.** The one-shot capacity investment ($b_E$
+  MWh, $b_P$ MW). Evaluated by running the inner loop $10^3$–$10^4$
+  times over candidate sizes and picking the NPV argmax. This is what
+  academic sizing tools (HyDesign, REopt, PyPSA) do — with a *cheap,
+  deterministic* inner loop, because a stochastic one would cost
+  100–1000× more per evaluation.
+
+**The question:** does the *fidelity of the inner loop* change the
+*outer-loop answer* (the optimal size)?
+
+**The finding:** in the pure-merchant limit, **no**. Better forecasts
+and stochastic dispatch make you **more money** (0.9–37% NPV uplift;
+in stochastic-programming terms the value of the stochastic solution
+and the expected value of perfect information are both positive for
+*operation*) but they do **not** move the optimal capacity (VSS and
+EVPI for *sizing* are zero). The two loops decouple: **size with the
+cheap deterministic inner loop, operate with the fancy stochastic
+one.** They only re-couple when an imbalance penalty for undelivered
+energy pushes the plant into a divergence band — and even then it is
+two *other* axes, not forecast quality, that move sizing most:
+
+1. **The imbalance penalty**, above a band that opens at ≈25–35 €/MWh
+   in normal years and ≈10–15 €/MWh in a crisis year for wind-heavy
+   plants.
+2. **Risk attitude.** Switching the sizing objective from expected NPV
+   to CVaR (worst-case-averse) halves-to-quarters the optimal battery —
+   a *bigger* swing than forecast quality ever produces. And a
+   pessimist who designs around the worst-case forecast sizes *smaller*
+   still, and loses money doing it (see "three reference strategies"
+   below). Pick your risk measure before you argue about your forecast.
+
+---
+
 ## Background
 
 Why was this ever in doubt? Because the two communities that touch this
@@ -93,13 +136,118 @@ academic shortcut produces the wrong **capacity** recommendation.
 **Answer.** With no imbalance settlement (the pure-merchant limit),
 optimal capacity is identical across cheap and stochastic dispatch in
 **17 of 18 regimes** on DK1 and ERCOT North Hub, 2021–2023 — including
-the 2022 EU energy crisis and Storm Uri. With imbalance settlement, a
-break-point appears: ≈25–100 €/MWh at a 5:1 wind/battery ratio,
-saturating near 50 €/MWh for wind-heavier plants. Real DK1 settlement
-sat below it through 2023; the March-2025 reforms moved wind-heavy
-plants past it.
+the 2022 EU energy crisis and Storm Uri. The one break (DK1 2022 under
+a K=20 quantile ensemble) is the diagnostic firing correctly on the
+most-stressed regime. With imbalance settlement, **divergence bands**
+appear — penalty ranges where a single-forecast plant sizes bigger
+than an ensemble one — opening at ≈25–35 €/MWh in normal years and
+≈10–15 €/MWh in the 2022 crisis year for wind-heavy plants. Against
+*actual* eSett DK1 settlement: normal years stay invariant at every
+configuration; **the 2022 crisis year already split wind-heavy
+two-price plants (single 8 MWh vs ensemble 4 MWh)**. The March-2025
+Nordic reforms sustain crisis-level spreads, so that divergence regime
+is plausibly the post-reform normal.
 
-Full writeup: `paper/paper.pdf` (18 pages, submission draft).
+Full writeup: `paper/paper.pdf` (22 pages, submission draft). Every
+headline number is reproducible from the committed `results/` JSONs
+(see `sizing/paper_regret_ci.py` for the bootstrap/regret audit).
+
+### Three reference strategies (and a pessimist that sizes the wrong way)
+
+For the co-located wind+battery system with imbalance settlement we run
+three reference dispatch strategies (`sizing/paper_three_baselines.py`):
+
+1. **Perfect foresight** — bid realized wind, dispatch on realized
+   prices. Residual ≡ 0, no imbalance cost, NPV flat in the penalty.
+   The clairvoyant upper bound (the merchant optimizer expanded with
+   the imbalance market and settlement mechanics).
+2. **Honest forecast-error** — bid the forecast at gate closure, let
+   the battery correct the error at the grid point in real time
+   (`residual = bid − realized + BESS_correction`). The "single" and
+   "ensemble" policies.
+3. **Adversarial forecast-error** — feed a *deterministic worst-case*
+   input within a physical-plausibility (SCADA) band. `adv_design` bids
+   the per-hour **lower bound** on delivered power (a pessimist
+   designing around a floor, no peeking); `adv_stress` bids the band
+   endpoint that maximizes imbalance volume (an adversary maximizing
+   the plant's imbalance cost / TSO balancing procurement).
+
+NPV orders cleanly — perfect > ensemble ≥ single > adv_design >
+adv_stress — but the **sizing is the surprise**: the pessimist
+(`adv_design`) sizes *smaller* than the honest policies, not larger
+(ratio 20, λ=200, 2022: 24 MWh vs the honest 48). Bidding a delivery
+floor makes the imbalance chronic and one-signed, the battery
+saturates, and extra capacity can't chase a deficit the bid itself
+created — so the pessimist eats the penalty instead of sizing up.
+**"Design around the worst case" is not conservative here; it is
+wrong.** The pessimist↔adversary sizing span exceeds the
+single-vs-ensemble gap at every λ > 0 — decision attitude moves
+wind-coupled sizing more than forecast quality does.
+
+## Recommendations for the sector
+
+- **Sizing-tool builders (HyDesign / REopt / PyPSA).** Your
+  deterministic-LP inner dispatch is *empirically safe for capacity* in
+  the merchant limit — keep it; do not pay 100–1000× for a stochastic
+  inner loop just to size. **But** add the cheap diagnostic and the
+  settlement term before trusting a size for an imbalance-exposed,
+  wind-heavy plant: that is the regime where the shortcut breaks.
+- **Dispatch-optimizer vendors (Tesla / Fluence / Wärtsilä).**
+  Stochastic dispatch is justified by *operating revenue* (positive
+  VSS/EVPI everywhere), not by sizing. Mosaic-style pre-construction
+  "better sizing" claims do not hold in the merchant limit, where the
+  sizing value of stochastic simulation is ≈0 — sell the ops uplift,
+  which is real (up to 37%).
+- **HPP developers with imbalance exposure.** Forecast quality buys a
+  capacity reduction *only inside the divergence band*. Wind-heavy
+  ratios plus crisis-level spreads (post-2025 Nordic) put you in it —
+  size with an ensemble/settlement-aware loop, because a single-forecast
+  sizing exercise can buy you **twice** the battery you need.
+- **Anyone sizing under risk.** Choose your risk measure *first*:
+  expected-NPV vs CVaR moves the optimal battery more than any forecast
+  upgrade. And do not naively "design around the worst case" — the
+  pessimist sizes smaller and loses money.
+- **Run it on your own market.** The $b_{\mathrm{sat}}^{\epsilon}$
+  overlap test needs one year of price data and a laptop; it returns
+  {invariance survives, disjoint, inconclusive} for *your* market
+  rather than ours.
+
+## In context of prior work
+
+This sits between two established literatures and reconciles a
+contradiction running between them.
+
+- **Why invariance is even plausible.** Sioshansi et al. (2009) showed
+  a naive backcast captures ~85% of perfect-foresight arbitrage value —
+  if forecasts barely change *revenue*, the NPV-vs-capacity surface
+  barely shifts, so the *argmax* can hold. We make that argmax
+  invariance an explicit, falsifiable test.
+- **Forecast-error-driven storage sizing** (Bludszuweit &
+  Domínguez-Navarro 2011; Haessig et al. 2015; Pinson et al. 2007 on
+  quantile bids; Mokhtare et al. 2024 on penalty sweeps) established
+  the *direction* — worse forecasts need more storage under penalties.
+  Our contribution is locating the **policy-divergence bands** (where
+  single and ensemble sizing actually part) and their dependence on
+  plant configuration and year, on real settlement data.
+- **Fidelity-sensitive sizing** in load-serving and system-scale
+  settings (Dinh et al. 2025, 22% loss from simplified sizing; Cauz et
+  al. 2023, MILP-vs-RL investment differences; Schmidt 2025, limited
+  foresight shifts LDES mix) reaches the *opposite* answer — but all of
+  it lives on the *penalized* side of our boundary. The regime map says
+  when each answer applies.
+- **The closest "cheap-inner-loop, same size" result**, BOOST (Chehade
+  & Karaki 2025), shows LP-vs-MILP picks the same microgrid size — but
+  varies *constraint* fidelity under perfect foresight, not *forecast*
+  fidelity across real market years, and offers no market diagnostic.
+- **Stochastic-programming framing.** We report the canonical
+  decomposition (Birge & Louveaux): value of the stochastic solution
+  and expected value of perfect information are positive for operation,
+  zero for capacity in the merchant limit.
+- **Reconciling our own group.** Assaad et al. (2025, shared author)
+  argued low-fidelity EMS yields "faulty sizing evaluations." We refine
+  it: true for operating NPV and above the penalty band — *not* for
+  capacity in the merchant limit, where the cheap inner loop was already
+  enough.
 
 ## Heilmeier Catechism
 
@@ -107,18 +255,18 @@ Full writeup: `paper/paper.pdf` (18 pages, submission draft).
 
 **How is it done today.** Two camps. Academic sizing tools (hydesign, REopt, PyPSA) call a deterministic LP inner solver $10^3$–$10^4$ times per design evaluation; switching to a stochastic LP costs $100$–$1000\times$ more compute per evaluation. Commercial operators run ML-driven stochastic optimization at dispatch time (tens of GW deployed). Two communities, two architectures, no empirical test of whether the academic shortcut affects the capacity recommendation it produces.
 
-**What is new.** (1) A practitioner-runnable regime-classification diagnostic — the $b_{\mathrm{sat}}^{\epsilon}$ overlap test — computable on one year of price data; returns {invariance survives, disjoint, inconclusive}. (2) First empirical sweep comparing deterministic-LP vs.\ stochastic dispatch sizing on DK1 + ERCOT North Hub, 2021-2023, with three orthogonal LUMI HPC stress tests (2-D $(b_E, b_P)$ surface, K=20 quantile-regression ensemble, N=50 scenario SLP). (3) Off-the-shelf-cost characterization of hydesign defaults applied to a merchant battery. (4) Imbalance-penalty extension that recovers a forecast-quality-dependent break-point in sizing, mapped across wind/battery ratios. (5) Real-settlement anchor: the same residuals settled against actual eSett DK1 imbalance prices, locating where the market sits relative to the break-point — below it through 2023, at/above it for wind-heavy plants after the March-2025 reforms.
+**What is new.** (1) A practitioner-runnable regime-classification diagnostic — the $b_{\mathrm{sat}}^{\epsilon}$ overlap test — computable on one year of price data; returns {invariance survives, disjoint, inconclusive}. (2) First empirical sweep comparing deterministic-LP vs.\ stochastic dispatch sizing on DK1 + ERCOT North Hub, 2021-2023, with three orthogonal LUMI HPC stress tests (2-D $(b_E, b_P)$ surface, K=20 quantile-regression ensemble, N=50 scenario SLP) plus post-hoc max-min-robust and CVaR risk sweeps. (3) Off-the-shelf-cost characterization of hydesign defaults applied to a merchant battery. (4) Imbalance-penalty extension that recovers forecast-quality-dependent divergence bands in sizing, mapped across wind/battery ratios, under corrected residual-at-DA settlement. (5) Real-settlement anchor: the same residuals settled against actual eSett DK1 imbalance prices — normal years invariant, the 2022 crisis year splitting wind-heavy plants. (6) The stochastic-programming decomposition (VSS/EVPI: positive for operation, zero for merchant capacity) and the three-baseline framework (perfect / honest / adversarial), showing decision attitude outweighs forecast quality for sizing.
 
 **Who cares.** Anyone running hydesign / REopt / PyPSA for grid-tied battery sizing (40+ GW of hybrid-power-plant projects in pipeline use these tools). Knowing whether your market sits below or above $\lambda^*$ tells you whether your deterministic-LP sizing answer is robust or off by $\sim 50\%$ on capacity.
 
-**Risks.** (1) Persistence ensemble is a weak stochastic baseline; richer forecasts can break invariance — partially confirmed by quantile-regression ensemble on DK1 2022; wind-side skilled forecasts at $\lambda > 0$ untested. (2) Only DK1 + ERCOT North Hub tested; CAISO, PJM, Nord Pool intraday have different structure; real-settlement anchor is DK1-only. (3) Break-point depends on plant configuration — measured to be non-increasing and saturating near 50 €/MWh in wind/battery ratio (not inverse, as initially conjectured).
+**Risks.** (1) Persistence ensemble is a weak stochastic baseline; richer forecasts can break invariance — partially confirmed by quantile-regression ensemble on DK1 2022; wind-side skilled forecasts at $\lambda > 0$ untested. (2) Only DK1 + ERCOT North Hub tested; CAISO, PJM, Nord Pool intraday have different structure; real-settlement anchor is DK1-only and hourly (post-2025 15-minute settlement adds intra-hour residuals this model omits). (3) Divergence-band onset depends on plant configuration — non-increasing in wind/battery ratio, reaching the realized-spread range in the crisis year at wind-heavy ratios. (4) Factorial dispatch is open-loop per 8-week chunk (anticipative beyond 24 h); revenue *levels* are upper bounds, though the nonanticipative rolling SLP confirms the *argmax*. (5) Real-time recourse is "absorb always," value-destroying at small spreads; a price-rational recourse rule is future work.
 
 **Cost.** Diagnostic runs on a laptop in minutes. Stress tests $\sim 50$ node-h on LUMI HPC (research allocation, no marginal cost).
 
-**Time.** Six months: pre-registered design, dataset acquisition (Energinet + gridstatus), four dispatch policies, three stress tests, hydesign baseline integration, imbalance-penalty extension, paper write-up. Workshop draft ready for submission.
+**Time.** Pre-registered design, dataset acquisition (Energinet + gridstatus + eSett), the dispatch-policy factorial, three LUMI stress tests, hydesign baseline integration, the imbalance-penalty + real-settlement extensions, the stochastic-programming decomposition and three-baseline framework, and three rounds of adversarial review (each of which materially changed the numbers — the settlement-accounting fix came out of the last). Submission draft ready; targeting a journal (Energy & AI / Applied Energy / Wind Energy Science) rather than a 4-page workshop, since the diagnostic and stress battery are the contribution.
 
 **Mid-term exam.** Diagnostic returns "invariance survives" on synthetic AR(1) where invariance must hold by construction. ✓
-**Final exam.** Diagnostic correctly fires "disjoint" on the one stress-test regime (of 18) where sizing actually shifts (DK1 2022 quantile ensemble). ✓ Imbalance break-point reproducible across years (3/3 DK1 years; saturates ≈50 €/MWh at wind-heavy ratios). ✓ Under *real* DK1 settlement (effective penalty 11–28 €/MWh, below break-point) the diagnostic predicts invariance — and sizing is indeed invariant, all 3 years, both settlement regimes. ✓
+**Final exam.** Diagnostic correctly fires "disjoint" on the one stress-test regime (of 18) where sizing actually shifts (DK1 2022 quantile ensemble). ✓ Divergence bands reproducible across years and wind ratios. ✓ Under *real* eSett DK1 settlement the diagnostic's prediction holds on both sides: normal years invariant at every configuration, and the 2022 crisis year splits wind-heavy two-price plants (single 8 MWh vs ensemble 4) exactly where the bands say it should. ✓
 
 ## Headline results
 
@@ -128,9 +276,13 @@ Full writeup: `paper/paper.pdf` (18 pages, submission draft).
 | Argmax invariance, 3 LUMI stress tests × 6 regimes (18 total) | **17/18 survive**; DK1 2022 quantile-K=20 breaks |
 | Max-min robust dispatch (post-hoc, worst-case across K=4 members) | same $b_E^*$ in **5/6 regimes**; ERCOT-2021/Uri lands on the quadratic policies' optimum |
 | Hydesign-default operational constraints vs unrestricted LP | **5.5–35.9% NPV gap** at argmax; $b_E^*$ shifts 2/6 regimes |
-| Imbalance-penalty break-point (5 MW wind + 1 MW battery, DK1) | $\lambda^* \approx 100$ EUR/MWh on **all 3 years**; single $24$ MWh, ensemble $16$ MWh |
-| Break-point vs wind/battery ratio (W = 1/2/5/10/20 MW) | non-increasing, **saturates ≈50 €/MWh** for ratios ≥ 10 |
-| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**, below break-point; **sizing invariant all 3 years** |
+| Imbalance divergence bands (wind + 1 MW battery, DK1, corrected settlement) | open at **≈25–35 €/MWh** normal years, **≈10–15** in 2022 crisis at ratios ≥ 10 |
+| Bands vs wind/battery ratio (W = 1/2/5/10/20 MW) | onset non-increasing in ratio; reaches realized-spread range in the crisis year |
+| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**; normal years invariant, 2022 wind-heavy splits |
+| Stochastic-programming decomposition (WS/RP/EEV) | VSS & EVPI **positive for operation, zero for merchant capacity** |
+| CVaR sizing sweep (mean → CVaR₀.₈₅) | optimal $b_E$ **halves-to-quarters** — risk attitude moves sizing more than forecast quality |
+| Three baselines (perfect / honest / adversarial) | NPV: perfect > ensemble ≥ single > pessimist > adversary; **pessimist sizes smaller, not larger** |
+| Settlement-accounting fix (residual valued at DA) | removed an overbidder money-pump the quantile bidder exposed; all imbalance results regenerated |
 | Settlement-aware reserve dispatch (ρ ≤ 0.3) + single-site wind errors (γ ≤ 3) | reserve never pays below λ=500, bands unchanged; single-site errors push the **crisis-year** band into the realized-spread range |
 | Real settlement at wind-heavy ratios (10:1, 20:1) | normal years invariant; **2022 splits: single 8 MWh vs ensemble 4 MWh** (two-price) |
 | Quantile (newsvendor) wind bidding from the K=4 ensemble | within ±0.5% NPV of mean bidding; bands unchanged (member spread too narrow) |
@@ -152,13 +304,20 @@ forecast-aware-sizing/
 │   ├── hydesign_merchant_fork.py, hydesign_local_check.py
 │   ├── paper_benchmark.py, paper_2d_task.py, paper_quantile.py,
 │   ├── paper_slp.py, paper_timeseries.py, paper_hydesign.py,
-│   ├── paper_imbalance.py, paper_stress_figures.py, paper_figures.py
+│   ├── paper_imbalance.py, paper_real_imbalance.py, ratio_sweep_cell.py,
+│   ├── paper_regret_ci.py     bootstrap/regret + replacement audit
+│   ├── paper_robust.py        max-min robust dispatch sweep
+│   ├── paper_ws_cvar.py       WS/RP/EEV decomposition + CVaR risk sweep
+│   ├── paper_quantile_bid.py  newsvendor wind bidding
+│   ├── paper_settlement_aware.py  reserve bands + wind-error inflation
+│   ├── paper_three_baselines.py   perfect / honest / adversarial
+│   ├── paper_stress_figures.py, paper_figures.py, real_imbalance_figures.py
 │   └── sanity_*.py
 ├── rl_elm/             prior project: degradation-aware RL (see below)
 ├── results/            tracked JSON outputs (2d/, quantile/, slp/,
 │                       hydesign/, imbalance/, main/, gbar/)
 ├── scripts/lumi/       Slurm submission scripts (2d, quantile, slp, run)
-├── scripts/gbar/       LSF (DTU gbar) scripts
+├── scripts/gbar/       LSF (DTU gbar) scripts; memrun.sh RSS watchdog
 ├── docs/memos/         design + kill memos
 ├── docs/preregistrations/  pre-registered amendments
 ├── tests/              pytest entry points
