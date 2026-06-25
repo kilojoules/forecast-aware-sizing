@@ -9,6 +9,7 @@
 \usepackage[round]{natbib}
 \usepackage{xcolor}
 \usepackage{eurosym}
+\usepackage{pifont}
 
 \hypersetup{colorlinks=true, linkcolor=black, citecolor=blue, urlcolor=blue}
 
@@ -135,27 +136,58 @@ The diagnostic is independent of the proposition. The proposition predicts that 
 
 \section{Results}\label{sec:results}
 
-\subsection{Spectra and predicted divergence}
+We report the results as an \emph{adversarial ladder}. The claim under
+test is: \emph{optimal merchant battery capacity is invariant to dispatch
+fidelity}. We then subject it to a sequence of increasingly hard attacks
+--- a continuous forecast-degradation dial, a four-test stress gauntlet,
+real off-the-shelf tool constraints, an imbalance penalty, and an
+adversarial/risk-averse operator --- and report which attacks the claim
+survives and which land. This mirrors how the result was actually
+obtained (pre-registration, a falsified proposition reported as falsified,
+and three rounds of adversarial review). The theoretical proposition that
+motivated the study (spectral content should break invariance,
+Figure~\ref{fig:spectrum} in Appendix~\ref{app:supp}) is the first
+casualty: the data falsify it (\S\ref{sec:falsify}).
 
-Welch PSD on synthetic AR(1) returns dominant peaks at 23.5 h and 12.0 h with negligible weight at $> 100$ h (Figure~\ref{fig:spectrum}). DK1 has strong peaks at 168 h (1 week, especially in 2022), 336 h (fortnight, 2023), 84 h, 224 h. ERCOT 2021 has broadband content from the Uri spike events. The proposition predicts invariance to hold on synthetic, break on DK1 and ERCOT.
+\subsection{The claim: information helps operation, not sizing}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.85\textwidth]{fig_paper_spectrum.png}
-\caption{\label{fig:spectrum}Welch PSD: synthetic vs DK1 + ERCOT day-ahead. Both real markets have substantial multi-day spectral weight; the proposition predicts invariance breaking, but \S\ref{sec:results}.3 falsifies the prediction.}
-\end{figure}
+Figure~\ref{fig:vss} states the position the rest of the section attacks.
+Across all six market-years, NPV at the optimal capacity climbs with
+dispatch information (point forecast $<$ ensemble $<$ perfect foresight;
+EVPI $0.08$--$0.68$\,M\euro, operational VSS $0.03$--$0.33$\,M\euro,
+both positive everywhere), while the capacity argmax sits on the same
+value for all three information structures in five of six regimes. In the
+stochastic-programming decomposition (\S\ref{sec:stress}), the value of
+the stochastic solution is positive for operation and zero for merchant
+capacity. This is the message for a sizing-tool practitioner: pay for a
+stochastic dispatcher to earn more, not to size.
 
 \subsection{Operational lift confirms the literature}
 
-Multi-lag ensemble dispatch yields positive realized-revenue lift over single-forecast dispatch in the relevant capacity range, on both markets. NPV uplift at the optimum spans $+0.9\%$ (ERCOT 2023, low-volatility regime) to $+36.7\%$ (ERCOT 2021 with Uri spikes), with DK1 in the middle ($+20$ to $+34\%$); per the open-loop caveat of \S\ref{sec:setup}, these are upper-bound levels, with the nonanticipative SLP sitting $5$--$30\%$ lower at the same argmax. The wide range reflects how much exploitable forecast asymmetry each year contains. Consistent in sign and magnitude with \citet{cao2020drl}, \citet{krishnamurthy2018stochastic}.
+Multi-lag ensemble dispatch yields positive realized-revenue lift over single-forecast dispatch in the relevant capacity range, on both markets (the left panel of Figure~\ref{fig:vss}; per-$b_E$ revenue curves in Figure~\ref{fig:revenue}, Appendix~\ref{app:supp}). NPV uplift at the optimum spans $+0.9\%$ (ERCOT 2023, low-volatility regime) to $+36.7\%$ (ERCOT 2021 with Uri spikes), with DK1 in the middle ($+20$ to $+34\%$); per the open-loop caveat of \S\ref{sec:setup}, these are upper-bound levels, with the nonanticipative SLP sitting $5$--$30\%$ lower at the same argmax. The wide range reflects how much exploitable forecast asymmetry each year contains. Consistent in sign and magnitude with \citet{cao2020drl}, \citet{krishnamurthy2018stochastic}.
+
+\subsection{Challenge ladder: the stress gauntlet}\label{sec:gauntlet}
+
+The invariance claim faces a gauntlet of attacks, each a harder attempt
+to shift the optimal-capacity argmax than the last. Figure~\ref{fig:gauntlet}
+is the scoreboard: six market-years $\times$ six attacks (persistence
+ensemble, 2-D $(b_E,b_P)$ surface, scenario SLP, max-min robust dispatch,
+the continuous $\gamma$ dial on its skill range, and the K=20 quantile
+ensemble), each cell testing whether the argmax holds against its
+cheap-baseline comparator. \textbf{32 of 36 survive.} The four that fall
+localize sharply: DK1 2022 breaks only under the most-informative K=20
+quantile ensemble (the diagnostic firing on the highest-volatility year),
+and ERCOT 2021 --- the Storm Uri spike year, statistically thinnest for
+sizing --- falls to three attacks (SLP, max-min, $\gamma$), the same cell
+the regret bootstrap (\S\ref{sec:stress}) flags with $47\%$ tail regret.
+Invariance is not universal; it is a robust property of every regime
+except the two the data themselves mark as fragile.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\textwidth]{fig_paper_revenue.png}
-\caption{\label{fig:revenue}Annual realized revenue vs $b_E$. Multi-lag ensemble dominates single-forecast in the relevant range. Past $b_E \sim 100$ MWh the curves cross --- ensemble's longer-period information is not net-positive at extreme capacity --- but this region is far past NPV-optimal.}
+\includegraphics[width=\textwidth]{fig_gauntlet.png}
+\caption{\label{fig:gauntlet}Stress-gauntlet scoreboard. Rows: market-years; columns: attacks ordered by increasing strength; each cell reports argmax(cheap baseline / attack policy) and whether the optimal capacity is invariant (\checkmark) or shifts (\ding{55}). 32/36 survive; the breaks cluster in DK1 2022 (K=20 quantile only) and ERCOT 2021/Uri (the statistically-thin spike year). Per-attack detail: Tables~\ref{tab:dk1head}--\ref{tab:quantile}; the K=20 quantile break and the SLP comparison in Figures~\ref{fig:quantile},~\ref{fig:slp} (Appendix~\ref{app:supp}).}
 \end{figure}
-
-\subsection{Diagnostic returns ``invariance survives'' on every regime tested}
 
 \begin{table}[t]
 \centering\small
@@ -185,25 +217,16 @@ Year & $b_E^*$ (MWh) & NPV LP-single & NPV LP-ens & NPV QP-single & NPV QP-ens \
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig_paper_npv.png}
-\caption{\label{fig:npv}Lifetime NPV vs $b_E$ for DK1 by year. Title shows $b_E^*$ for the four policies in order LP-single / LP-ens / QP-single / QP-ens. All four are identical in every panel. ERCOT panels analogous.}
-\end{figure}
+Per-policy NPV-vs-$b_E$ curves (Figure~\ref{fig:npv}) and the ensemble
+revenue lift (Figure~\ref{fig:lift}) are in Appendix~\ref{app:supp}.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig_paper_lift.png}
-\caption{\label{fig:lift}Ensemble revenue lift over single, by year (DK1). Approximately uniform in $b_E$ in the NPV-relevant range, supporting the empirical argmax-invariance. ERCOT panels analogous.}
-\end{figure}
-
-\subsection{Falsification of the proposition's regime prediction}
+\subsection{Falsification of the proposition's regime prediction}\label{sec:falsify}
 
 The proposition predicted multi-day spectral content (DK1 weekly peaks, ERCOT broadband spikes) should break invariance. It does not. The realized NPV curves are approximately vertical translations of each other in the relevant capacity range, not tilts.
 
 This is a clean negative result for the regime-shift prediction and a positive result for the diagnostic: the test correctly returns ``overlap''; the proposition that motivated it was wrong about which regimes would yield ``disjoint''. The diagnostic survives because its job was to measure --- not to predict --- the overlap status of $b_{\mathrm{sat}}^\epsilon$ CIs.
 
-\subsection{Stress tests: 2-D sweep, quantile-regression ensemble, scenario SLP, max-min robust}\label{sec:stress}
+\subsection{Challenge detail: the stress tests, statistics, and decision attitude}\label{sec:stress}
 
 The 1-D / multi-lag-persistence baseline is one slice of the design
 space. Three stress tests on LUMI HPC probe robustness (designed after
@@ -420,20 +443,8 @@ imbalance penalty as the first.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\textwidth]{fig_paper_2d.png}
-\caption{\label{fig:2d}2-D NPV surfaces (QP-ensemble dispatch). Markers show argmax for each of the 4 policies. The four argmaxes coincide at the same $(b_P^*, b_E^*)$ cell in every (market, year) panel, confirming 1-D invariance generalises to 2-D. Most argmaxes land at the corner of the tested grid, suggesting the actual optimum lies past our range.}
-\end{figure}
-
-\begin{figure}[t]
-\centering
 \includegraphics[width=0.95\textwidth]{fig_paper_quantile.png}
-\caption{\label{fig:quantile}NPV vs $b_E$ under persistence-K=4 (solid) and quantile-K=20 (dashed) ensembles. DK1 2022 (top centre) is the only panel where the linear-cost single-forecast argmax disagrees with the others under the richer quantile ensemble.}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig_paper_slp.png}
-\caption{\label{fig:slp}Two-stage rolling-horizon stochastic LP (N=50 scenarios per 24-h window, green) compared to full-horizon QP-single and QP-ensemble. SLP NPV is lower (rolling vs perfect-foresight gap) but argmax $b_E^*$ matches in every market-year.}
+\caption{\label{fig:quantile}The one forecast-axis break, in detail. NPV vs $b_E$ under persistence-K=4 (solid) and quantile-K=20 (dashed) ensembles. DK1 2022 (top centre) is the only panel where the linear-cost single-forecast argmax disagrees with the others under the richer quantile ensemble --- the single \ding{55} on the gauntlet's forecast column.}
 \end{figure}
 
 \paragraph{Combined verdict.} Across (a) the original 6 (market,
@@ -448,7 +459,7 @@ holds at the quantile-regression-ensemble level for the most-stressed
 regime --- consistent with the diagnostic correctly classifying
 ``disjoint'' under richer forecasts and harder regimes.
 
-\subsection{Hydesign-default off-the-shelf baseline}\label{sec:hydesign}
+\subsection{Challenge that lands: real off-the-shelf tool constraints}\label{sec:hydesign}
 
 Our merchant-arbitrage formulation collapses to hydesign's deterministic perfect-foresight EMS LP \citep{murcia2024hydesign} once a single structural constraint is relaxed: hydesign's grid-export non-negativity $P_{\mathrm{HPP}} \ge 0$ blocks pure grid-charging, the operating mode required for a merchant battery. A minimal local fork (single bound change, no other modifications) allows bidirectional grid. With that change plus matched operational parameters (depth-of-discharge $= 1$, no terminal-SoC constraint, $\eta = 1$, no peak-hour or cycling penalty), the hydesign LP and our LP produce identical dispatch on a 96-hour DK1 2022 cell: action correlation $1.0000$, revenue agreement to $0.000\%$. The two LPs are mathematically equivalent on the merchant-battery problem.
 
@@ -481,15 +492,6 @@ ERCOT N. & 2023 & 8  & 2.19M & 8  & 2.32M & $+5.5\%$ & \\
 \caption{\label{fig:hydesign}Hydesign-default operational constraints (red circles, DoD$=0.9$ + 110-h batched cycle balance) vs unrestricted LP (blue squares). Dotted lines: NPV argmax per policy. Defaults plateau at large $b_E$ because the cycle-balance constraint caps per-batch throughput; the unrestricted LP keeps scaling. $b_E^*$ shifts in 2 of 6 regimes; NPV gap at each policy's own argmax ranges $5.5$--$35.9\%$ (table~\ref{tab:hydesign}).}
 \end{figure}
 
-\subsection{Charge/discharge pattern on the spike week}
-
-Figure~\ref{fig:timeseries} shows all four policies on the DK1 2022 spike week (containing the year's max price \euro 871/MWh on 2022-09-01, around a low-wind period visible in the resource panel). The dispatch decisions are visually nearly identical across policies, confirming the empirical similarity that the diagnostic measures.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\textwidth]{fig_paper_timeseries.png}
-\caption{\label{fig:timeseries}DK1 2022 spike week. Top: realized DA price + multi-lag persistence forecasts + ensemble mean. Second: physical context (wind, solar, load, residual). Third: SoC trajectories under each of 4 policies (overlapping). Bottom: net dispatch (overlapping). Different policies make near-identical decisions on this week.}
-\end{figure}
 
 \section{Discussion}\label{sec:discussion}
 
@@ -529,7 +531,13 @@ The conclusion is dated, deliberately: the March-2025 Nordic balancing reforms (
 
 \paragraph{Quantile (newsvendor) bidding (post hoc).} Under asymmetric penalties the optimal DA wind bid is a quantile of the predictive distribution, not the mean \citep{pinson2007trading}; forcing both policies to bid point forecasts could understate the ensemble's value, since only the ensemble \emph{has} a distribution. We let the ensemble bid the per-hour quantile $q \in \{0.25, 0.4, 0.5, 0.6, 0.75\}$ of its $K{=}4$ members and take the best $q$ per $(\lambda, b_E)$ as the quantile-optimal envelope. Under real two-price settlement every quantile bidder lands within $\pm 0.5\%$ NPV of the mean bidder (the $K{=}4$ member spread is too narrow for quantile selection to matter), argmaxes match, and the constant-$\lambda$ divergence bands are unchanged within one grid step. Distributional bidding from this cheap ensemble neither rescues nor indicts the point-forecast comparison; richer predictive distributions could change that, and the test that exposed the settlement-accounting error above is retained in the released benchmark.
 
-\paragraph{Three reference strategies, and a pessimist that sizes the other way (post hoc).} To bracket the honest baselines we run two reference strategies on the same co-located system. \emph{Perfect foresight} bids realised wind and dispatches on realised prices: residual $\equiv 0$, no imbalance cost, NPV flat in $\lambda$ --- the clairvoyant upper bound, and the natural expansion of the merchant optimizer with settlement wired in. \emph{Adversarial} strategies feed a deterministic worst-case input within a physical-plausibility band (per-hour $[\min_k, \max_k]$ of the $K{=}4$ members): \texttt{adv\_design} bids the per-hour \emph{lower bound} (a pessimist that designs around a floor on delivered power, no peeking), \texttt{adv\_stress} bids the band endpoint farthest from realised (an adversary maximizing imbalance volume; an NPV lower bound). The NPV ordering is uniform across years and ratios --- perfect $>$ ensemble $\geq$ single $>$ \texttt{adv\_design} $>$ \texttt{adv\_stress} --- but the \emph{sizing} is the point: the pessimist sizes \emph{smaller} than the honest policies, not larger. At ratio 20, $\lambda = 200$ in 2022 the honest policies pick $b_E^* = 48$ MWh while \texttt{adv\_design} picks $24$; at $\lambda = 100$, $32$ vs $16$. Designing around a delivery floor makes the imbalance chronic and one-signed, the battery saturates, and additional capacity cannot chase a deficit the bid created --- so the pessimist accepts the penalty rather than sizing up. The span between the pessimist's $b_E^*$ and the adversary-tracking $b_E^*$ exceeds the single-vs-ensemble gap at every $\lambda > 0$: \emph{decision attitude moves wind-coupled sizing more than forecast quality does}, the same ordering the merchant CVaR sweep (\S\ref{sec:stress}) found, now with an implementable deterministic policy. At $\lambda = 0$ all five collapse to the merchant optimum, preserving invariance in the pure-merchant limit. Three caveats bound these reference strategies. \texttt{adv\_stress} selects the worst band endpoint using realised wind, so it is an upper bound on imbalance cost rather than an implementable adversary; a bilevel adversary committing errors before dispatch would be tighter. \texttt{adv\_design}'s delivery floor is the $K{=}4$ ensemble minimum, a coarse proxy for a calibrated lower confidence bound and subject to the same weak-ensemble caveat as the rest of the study. And perfect foresight here is clairvoyant in \emph{both} price and wind; a wind-only-clairvoyant bound would isolate the value of the wind forecast from that of the price forecast, which this configuration conflates.
+\paragraph{Three reference strategies, and a pessimist that sizes the other way (post hoc).} To bracket the honest baselines we run two reference strategies on the same co-located system. \emph{Perfect foresight} bids realised wind and dispatches on realised prices: residual $\equiv 0$, no imbalance cost, NPV flat in $\lambda$ --- the clairvoyant upper bound, and the natural expansion of the merchant optimizer with settlement wired in. \emph{Adversarial} strategies feed a deterministic worst-case input within a physical-plausibility band (per-hour $[\min_k, \max_k]$ of the $K{=}4$ members): \texttt{adv\_design} bids the per-hour \emph{lower bound} (a pessimist that designs around a floor on delivered power, no peeking), \texttt{adv\_stress} bids the band endpoint farthest from realised (an adversary maximizing imbalance volume; an NPV lower bound). The NPV ordering is perfect $>$ \{single, ensemble\} (near-tied under naive absorption, single marginally ahead) $>$ \texttt{adv\_design} $>$ \texttt{adv\_stress}, but the \emph{sizing} is the point (Figure~\ref{fig:baselines}): the pessimist sizes \emph{smaller} than the honest policies, not larger. At ratio 20, $\lambda = 200$ in 2022 the honest policies pick $b_E^* = 48$ MWh while \texttt{adv\_design} picks $24$ (and loses $\sim 25$\,M\euro\ more relative to the clairvoyant oracle); at $\lambda = 100$, $32$ vs $16$. Designing around a delivery floor makes the imbalance chronic and one-signed, the battery saturates, and additional capacity cannot chase a deficit the bid created --- so the pessimist accepts the penalty rather than sizing up. The span between the pessimist's $b_E^*$ and the adversary-tracking $b_E^*$ exceeds the single-vs-ensemble gap at every $\lambda > 0$: \emph{decision attitude moves wind-coupled sizing more than forecast quality does}, the same ordering the merchant CVaR sweep (\S\ref{sec:stress}) found, now with an implementable deterministic policy. At $\lambda = 0$ all five collapse to the merchant optimum, preserving invariance in the pure-merchant limit. Three caveats bound these reference strategies. \texttt{adv\_stress} selects the worst band endpoint using realised wind, so it is an upper bound on imbalance cost rather than an implementable adversary; a bilevel adversary committing errors before dispatch would be tighter. \texttt{adv\_design}'s delivery floor is the $K{=}4$ ensemble minimum, a coarse proxy for a calibrated lower confidence bound and subject to the same weak-ensemble caveat as the rest of the study. And perfect foresight here is clairvoyant in \emph{both} price and wind; a wind-only-clairvoyant bound would isolate the value of the wind forecast from that of the price forecast, which this configuration conflates.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{fig_baselines.png}
+\caption{\label{fig:baselines}Adversarial baselines in NPV-shortfall-below-perfect-foresight (DK1 2022, 20:1 wind/battery, $\lambda = 200$ EUR/MWh; the wind DA revenue $\sim 95$\,M\euro\ is differenced out so the battery economics are visible). Each bar is labelled with its optimal size. The pessimist (\texttt{adv\_design}, worst-case design) sizes \emph{smallest} ($24$ vs the honest $48$ MWh) yet loses the most of the honest policies --- a delivery-floor bid makes imbalance chronic and one-signed, which no battery can buffer, so worst-case design is a mistake rather than caution. At $\lambda = 0$ all five coincide (merchant invariance).}
+\end{figure}
 
 \begin{figure}[t]
 \centering
@@ -564,6 +572,59 @@ We propose a regime-classification diagnostic for whether dispatch fidelity matt
 
 \paragraph{Reproducibility.}
 Benchmark, four dispatch policies, multi-lag ensemble, sizing harness, pre-registration commits, and ERCOT + DK1 loaders are in \texttt{forecast-aware-sizing} at \url{https://github.com/kilojoules/forecast-aware-sizing} (commit hash in repo).
+
+\appendix
+\section{Supplementary figures}\label{app:supp}
+
+The figures below provide the per-policy detail behind the stress-gauntlet
+scoreboard (Figure~\ref{fig:gauntlet}) and the operational-lift summary
+(Figure~\ref{fig:vss}). Each restates, at finer grain, an invariance the
+scoreboard reports as a single cell; they are collected here to keep the
+main-text figure arc focused on the adversarial ladder. Figure~\ref{fig:spectrum}
+is the spectral motivation for the proposition the data falsify
+(\S\ref{sec:falsify}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\textwidth]{fig_paper_spectrum.png}
+\caption{\label{fig:spectrum}Welch PSD: synthetic vs DK1 + ERCOT day-ahead. Both real markets have substantial multi-day spectral weight; the proposition predicts invariance breaking, but \S\ref{sec:falsify} falsifies the prediction.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_revenue.png}
+\caption{\label{fig:revenue}Annual realized revenue vs $b_E$. Multi-lag ensemble leads single-forecast in the relevant range. Past $b_E \sim 100$ MWh the curves cross --- ensemble's longer-period information is not net-positive at extreme capacity --- but this region is far past NPV-optimal.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_npv.png}
+\caption{\label{fig:npv}Lifetime NPV vs $b_E$ for DK1 by year. Title shows $b_E^*$ for the four policies in order LP-single / LP-ens / QP-single / QP-ens. All four are identical in every panel. ERCOT panels analogous. (Persistence-ensemble column of Figure~\ref{fig:gauntlet}.)}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_lift.png}
+\caption{\label{fig:lift}Ensemble revenue lift over single, by year (DK1). Approximately uniform in $b_E$ in the NPV-relevant range, supporting the empirical argmax-invariance.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_2d.png}
+\caption{\label{fig:2d}2-D NPV surfaces (QP-ensemble dispatch). Markers show argmax for each of the 4 policies; they coincide at the same $(b_P^*, b_E^*)$ cell in every (market, year) panel (2-D column of Figure~\ref{fig:gauntlet}). Most argmaxes land at the corner of the tested grid, suggesting the actual optimum lies past our range.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_slp.png}
+\caption{\label{fig:slp}Two-stage rolling-horizon stochastic LP (N=50 scenarios per 24-h window, green) vs full-horizon QP-single and QP-ensemble. SLP NPV is lower (rolling vs perfect-foresight gap); argmax $b_E^*$ matches the linear policies in every market-year, sitting one grid step below the full-horizon QP argmax at ERCOT 2021 (the \ding{55} on the gauntlet's SLP column).}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{fig_paper_timeseries.png}
+\caption{\label{fig:timeseries}DK1 2022 spike week (max price \euro 871/MWh, 2022-09-01). Top: realized DA price + multi-lag persistence forecasts + ensemble mean. Second: physical context. Third: SoC under each of 4 policies (overlapping). Bottom: net dispatch (overlapping). The policies make near-identical decisions, the merchant-limit similarity the diagnostic measures.}
+\end{figure}
 
 \bibliographystyle{plainnat}
 \begin{thebibliography}{99}
