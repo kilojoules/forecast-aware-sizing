@@ -7,11 +7,15 @@ decisions:
 
 - **How to operate it** — better price forecasts always pay here:
   0.9–37% more lifetime revenue in our tests.
-- **How big to build it** — surprisingly, forecast quality mostly
-  does **not** change this answer. The cheap deterministic dispatch
-  model inside academic sizing tools picks the same capacity as a
-  stochastic dispatcher… until one thing enters the picture: a
-  **penalty for energy you promised but didn't deliver**.
+- **How big to build it** — surprisingly, *for any forecast at least
+  as good as naive persistence* (i.e. the whole range a real operator
+  occupies), forecast quality does **not** change this answer. The
+  cheap deterministic dispatch model inside academic sizing tools picks
+  the same capacity as a stochastic dispatcher. (Push the forecast
+  *worse* than persistence and the optimal battery does shrink — but
+  that range loses money anyway, so no real operator is there.) The
+  invariance breaks for a different reason: a **penalty for energy you
+  promised but didn't deliver**.
 
 Once that imbalance penalty enters the divergence band (opening around
 25–35 €/MWh in normal years, and as low as 10–15 €/MWh in the 2022
@@ -105,11 +109,15 @@ and stochastic dispatch make you **more money** (0.9–37% NPV uplift;
 in stochastic-programming terms the value of the stochastic solution
 and the expected value of perfect information are both positive for
 *operation*) but they do **not** move the optimal capacity (VSS and
-EVPI for *sizing* are zero). The two loops decouple: **size with the
-cheap deterministic inner loop, operate with the fancy stochastic
-one.** They only re-couple when an imbalance penalty for undelivered
-energy pushes the plant into a divergence band — and even then it is
-two *other* axes, not forecast quality, that move sizing most:
+EVPI for *sizing* are zero). The two loops decouple — **in the merchant
+limit (no delivery penalty), and for any forecast at least as good as
+persistence, you can size with the cheap deterministic inner loop and
+operate with the fancy stochastic one.** (A continuous forecast-error
+dial confirms it: optimal size is flat across the whole realistic skill
+range and only shrinks once forecasts are worse than persistence, which
+loses money anyway.) The loops re-couple when an imbalance penalty for
+undelivered energy pushes the plant into a divergence band — and even
+then it is two *other* axes, not forecast quality, that move sizing most:
 
 1. **The imbalance penalty**, above a band that opens at ≈25–35 €/MWh
    in normal years and ≈10–15 €/MWh in a crisis year for wind-heavy
@@ -278,13 +286,14 @@ contradiction running between them.
 | Hydesign-default operational constraints vs unrestricted LP | **5.5–35.9% NPV gap** at argmax; $b_E^*$ shifts 2/6 regimes |
 | Imbalance divergence bands (wind + 1 MW battery, DK1, corrected settlement) | open at **≈25–35 €/MWh** normal years, **≈10–15** in 2022 crisis at ratios ≥ 10 |
 | Bands vs wind/battery ratio (W = 1/2/5/10/20 MW) | onset non-increasing in ratio; reaches realized-spread range in the crisis year |
-| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**; normal years invariant, 2022 wind-heavy splits |
+| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**; normal years invariant; 2022 wind-heavy splits only under a *counterfactual* two-price regime (retired Nov 2021), not one-price |
+| Continuous forecast-error dial γ (perfect → persistence → worse) | b_E\* **flat across the realistic skill range** (γ≤1), shrinks only for worse-than-persistence forecasts (which lose money) |
 | Stochastic-programming decomposition (WS/RP/EEV) | VSS & EVPI **positive for operation, zero for merchant capacity** |
 | CVaR sizing sweep (mean → CVaR₀.₈₅) | optimal $b_E$ **halves-to-quarters** — risk attitude moves sizing more than forecast quality |
 | Three baselines (perfect / honest / adversarial) | NPV: perfect > ensemble ≥ single > pessimist > adversary; **pessimist sizes smaller, not larger** |
 | Settlement-accounting fix (residual valued at DA) | removed an overbidder money-pump the quantile bidder exposed; all imbalance results regenerated |
 | Settlement-aware reserve dispatch (ρ ≤ 0.3) + single-site wind errors (γ ≤ 3) | reserve never pays below λ=500, bands unchanged; single-site errors push the **crisis-year** band into the realized-spread range |
-| Real settlement at wind-heavy ratios (10:1, 20:1) | normal years invariant; **2022 splits: single 8 MWh vs ensemble 4 MWh** (two-price) |
+| Real settlement at wind-heavy ratios (10:1, 20:1) | normal years invariant; **2022 splits 8 vs 4 MWh under the *counterfactual* two-price regime only**, not the in-force one-price |
 | Quantile (newsvendor) wind bidding from the K=4 ensemble | within ±0.5% NPV of mean bidding; bands unchanged (member spread too narrow) |
 | Operational stochastic-dispatch realized-NPV uplift at $b_E^*$ | **0.9–37%** across (market, year) |
 
