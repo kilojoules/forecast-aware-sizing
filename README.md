@@ -109,13 +109,29 @@ and stochastic dispatch make you **more money** (0.9–37% NPV uplift;
 in stochastic-programming terms the value of the stochastic solution
 and the expected value of perfect information are both positive for
 *operation*) but they do **not** move the optimal capacity (VSS and
-EVPI for *sizing* are zero). The two loops decouple — **in the merchant
+EVPI for *sizing* are zero).
+
+![Left: NPV at the optimal capacity climbs with dispatch information. Right: the optimal capacity argmax coincides across information levels in 5 of 6 markets.](paper/figures/fig_vss_capacity.png)
+
+*Operating value climbs with information (left); the optimal size does
+not move (right). Pay for a stochastic dispatcher to earn more, not to
+size — the cheap deterministic loop already picks the right capacity.* The two loops decouple — **in the merchant
 limit (no delivery penalty), and for any forecast at least as good as
 persistence, you can size with the cheap deterministic inner loop and
 operate with the fancy stochastic one.** (A continuous forecast-error
 dial confirms it: optimal size is flat across the whole realistic skill
 range and only shrinks once forecasts are worse than persistence, which
-loses money anyway.) The loops re-couple when an imbalance penalty for
+loses money anyway.)
+
+![Turn up a forecast-error dial: dispatch degrades by mistiming, the money falls steeply, but the optimal size holds across the realistic skill range then collapses only past persistence.](paper/figures/fig_ops_uncertainty.png)
+
+*Left→right, sharing one forecast-error dial γ (γ=0 perfect, γ=1
+persistence skill): dispatch degrades by **mistiming** (not
+over-cycling) → operating money falls steeply → but the optimal size is
+flat across the realizable skill range γ≤1 and only collapses once
+forecasts are worse than persistence (which loses money anyway).*
+
+The loops re-couple when an imbalance penalty for
 undelivered energy pushes the plant into a divergence band — and even
 then it is two *other* axes, not forecast quality, that move sizing most:
 
@@ -146,7 +162,16 @@ optimal capacity is identical across cheap and stochastic dispatch in
 **17 of 18 regimes** on DK1 and ERCOT North Hub, 2021–2023 — including
 the 2022 EU energy crisis and Storm Uri. The one break (DK1 2022 under
 a K=20 quantile ensemble) is the diagnostic firing correctly on the
-most-stressed regime. With imbalance settlement, **divergence bands**
+most-stressed regime. We report the results as an **adversarial ladder**
+— state the claim, then attack it with escalating challenges and mark
+which land:
+
+![Stress-gauntlet scoreboard: 6 markets × 6 attacks; 32 of 36 cells keep the same optimal size, the 4 breaks clustering in DK1 2022 (quantile only) and the ERCOT 2021 Storm-Uri spike year.](paper/figures/fig_gauntlet.png)
+
+*Six market-years × six attacks (persistence ensemble, 2-D sweep,
+scenario SLP, max-min robust, the continuous γ dial, K=20 quantile).
+**32/36 survive**; the breaks localize to DK1 2022 (quantile only) and
+ERCOT 2021/Uri — the statistically-thin spike year every probe flags.* With imbalance settlement, **divergence bands**
 appear — penalty ranges where a single-forecast plant sizes bigger
 than an ensemble one — opening at ≈25–35 €/MWh in normal years and
 ≈10–15 €/MWh in the 2022 crisis year for wind-heavy plants. Against
@@ -180,13 +205,22 @@ three reference dispatch strategies (`sizing/paper_three_baselines.py`):
    endpoint that maximizes imbalance volume (an adversary maximizing
    the plant's imbalance cost / TSO balancing procurement).
 
-NPV orders cleanly — perfect > ensemble ≥ single > adv_design >
-adv_stress — but the **sizing is the surprise**: the pessimist
-(`adv_design`) sizes *smaller* than the honest policies, not larger
-(ratio 20, λ=200, 2022: 24 MWh vs the honest 48). Bidding a delivery
-floor makes the imbalance chronic and one-signed, the battery
-saturates, and extra capacity can't chase a deficit the bid itself
-created — so the pessimist eats the penalty instead of sizing up.
+NPV orders perfect > {single, ensemble} (near-tied under naive
+absorption) > adv_design > adv_stress — but the **sizing is the
+surprise**: the pessimist (`adv_design`) sizes *smaller* than the
+honest policies, not larger (ratio 20, λ=200, 2022: 24 MWh vs the
+honest 48). Bidding a delivery floor makes the imbalance chronic and
+one-signed, the battery saturates, and extra capacity can't chase a
+deficit the bid itself created — so the pessimist eats the penalty
+instead of sizing up.
+
+![Adversarial baselines: the pessimist sizes smallest (24 MWh vs the honest 48) yet loses the most of the honest policies.](paper/figures/fig_baselines.png)
+
+*Money lost vs a clairvoyant oracle, each bar labeled with its optimal
+size (DK1 2022, 20:1 wind, λ=200). The pessimist builds the smallest
+battery and still loses most — worst-case design is a mistake, not
+caution.*
+
 **"Design around the worst case" is not conservative here; it is
 wrong.** The pessimist↔adversary sizing span exceeds the
 single-vs-ensemble gap at every λ > 0 — decision attitude moves
