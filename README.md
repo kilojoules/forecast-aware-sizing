@@ -115,7 +115,24 @@ EVPI for *sizing* are zero).
 
 *Operating value climbs with information (left); the optimal size does
 not move (right). Pay for a stochastic dispatcher to earn more, not to
-size — the cheap deterministic loop already picks the right capacity.* The two loops decouple — **in the merchant
+size — the cheap deterministic loop already picks the right capacity.*
+
+**"But if better forecasts earn more, doesn't that justify a bigger
+battery?"** No — and here's why. Sizing is a *marginal* decision: build
+until the last MWh stops paying for itself (marginal revenue = capex).
+Better forecasts lift the whole NPV curve **up** (more money) but not
+**sideways** — the extra money accrues to the capacity you'd build
+anyway, by timing it better, not to the *next* MWh. So the peak rises
+without moving:
+
+![Left: better forecasts lift the NPV peak up, not sideways — same optimal size. Right: the marginal MWh crosses the capex line at the same size for both forecasts.](paper/figures/fig_marginal.png)
+
+*Left: both forecasts peak at the same 8 MWh; the better one just sits
+higher. Right: optimal size is where the marginal MWh's revenue meets
+the 100 k€/MWh capex — and better forecasts don't lift it enough at that
+margin to move the crossing. Higher revenue justifies **building** the
+battery (and deploying more of them across the fleet), not building
+**this** one bigger.* The two loops decouple — **in the merchant
 limit (no delivery penalty), and for any forecast at least as good as
 persistence, you can size with the cheap deterministic inner loop and
 operate with the fancy stochastic one.** (A continuous forecast-error
