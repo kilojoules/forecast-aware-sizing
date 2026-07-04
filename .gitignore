@@ -30,3 +30,5 @@ ppo_logs/
 ppo_policy.zip
 .claude/
 data/
+hydesign/
+/fig_*.png

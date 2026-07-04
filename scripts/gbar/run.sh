@@ -22,8 +22,8 @@
 set -euo pipefail
 
 PASSPHRASE="cats"   # ssh key passphrase (from ~/.gbar.md, low-sensitivity)
-REMOTE_DIR='~/projects/battery_gym'
-REPO_URL="https://github.com/kilojoules/battery_gym.git"
+REMOTE_DIR='~/projects/forecast-aware-sizing'
+REPO_URL="git@github.com:kilojoules/forecast-aware-sizing.git"
 LOCAL_RESULTS_DIR="./results/gbar"
 
 cmd="${1:-status}"
@@ -123,12 +123,12 @@ case "$cmd" in
             command -v bsub >/dev/null || { echo bsub not found in PATH; exit 1; }
             mkdir -p ~/projects
             cd ~/projects
-            if [ -d battery_gym/.git ]; then
-                cd battery_gym && git fetch && git reset --hard origin/main
+            if [ -d forecast-aware-sizing/.git ]; then
+                cd forecast-aware-sizing && git fetch && git reset --hard origin/main
             else
-                rm -rf battery_gym
-                git clone $REPO_URL battery_gym
-                cd battery_gym
+                rm -rf forecast-aware-sizing
+                git clone $REPO_URL forecast-aware-sizing
+                cd forecast-aware-sizing
             fi
             chmod +x scripts/gbar/phase2_ppo.sh
             bsub < scripts/gbar/phase2_ppo.sh"

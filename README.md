@@ -1,21 +1,63 @@
 # forecast-aware-sizing
 
-**Do you need good forecasts to pick the right battery size?**
+Code and paper for a study of whether battery **sizing** tools need
+high-fidelity price forecasts. Full write-up: [`paper/paper.pdf`](paper/paper.pdf);
+all the code that makes the figures is in [`sizing/`](sizing/).
+
+**One-line answer:** a better forecast earns you **more money** on the
+same battery, but usually does **not** change what **size** to build.
+Size moves for a *different* reason — a penalty for energy you promised
+the grid but didn't deliver.
+
+## Quickstart — 2 minutes, one command, one takeaway
+
+```bash
+pixi install
+pixi run readme-figures     # ~5 s, offline; rebuilds the first two figures below
+```
+
+That command prints the money a battery earns in DK1 (West Denmark) 2022
+on the **same 16 MWh battery**, dispatched with three forecast qualities:
+
+| forecast | revenue | vs perfect |
+|---|---|---|
+| perfect foresight | €418,575 | 100% |
+| good (ensemble) | €293,938 | 70% |
+| cheap (single)  | €243,970 | 58% |
+
+**Takeaway:** forecast quality swings the *money* by ~20 points — but the
+*best size to build* is the same in all three cases. Money moves; size
+doesn't. Want the diagnostic itself? `pixi run diagnostic` runs the
+one-market test (`sizing/b_sat_classifier.py`, ~90 s) that returns
+*"invariance survives / breaks"* for a price series — the check you'd run
+on your own data.
+
+<details><summary><b>Glossary</b> (the jargon below, in one line each)</summary>
+
+- **persistence forecast** — the naive baseline "tomorrow's prices = today's".
+- **merchant limit** — selling into the wholesale market with *no* penalty for under-delivering.
+- **optimal size / argmax** — the battery size (MWh) that maximizes lifetime NPV.
+- **divergence band** — the penalty range where a cheap and a good forecast start recommending *different* sizes.
+- **VSS / EVPI** — stochastic-programming names for "value of using a better forecast" (turns out: positive for *operating* money, ~zero for *sizing*).
+
+</details>
+
+---
 
 You're building a battery (maybe next to a wind farm). Two separate
 decisions:
 
 - **How to operate it** — better price forecasts always pay here:
   0.9–37% more lifetime revenue in our tests.
-- **How big to build it** — surprisingly, *for any forecast at least
-  as good as naive persistence* (i.e. the whole range a real operator
-  occupies), forecast quality does **not** change this answer. The
-  cheap deterministic dispatch model inside academic sizing tools picks
-  the same capacity as a stochastic dispatcher. (Push the forecast
-  *worse* than persistence and the optimal battery does shrink — but
-  that range loses money anyway, so no real operator is there.) The
-  invariance breaks for a different reason: a **penalty for energy you
-  promised but didn't deliver**.
+- **How big to build it** — a better forecast makes you more money but
+  usually does **not** change the best size. The cheap deterministic
+  dispatch model inside academic sizing tools picks the same capacity as
+  an expensive stochastic one, *for any forecast at least as good as
+  naive persistence* (tomorrow = today) — i.e. the whole range a real
+  operator occupies. (Push the forecast *worse* than persistence and the
+  battery does shrink, but that range loses money anyway.) The size only
+  moves for a different reason: a **penalty for energy you promised but
+  didn't deliver**.
 
 Once that imbalance penalty enters the divergence band (opening around
 25–35 €/MWh in normal years, and as low as 10–15 €/MWh in the 2022
@@ -30,18 +72,21 @@ forecast (orange). In the grey bands the two pick different optimal
 sizes — that's where forecast quality drives the capacity decision.*
 
 **Where does reality sit?** We settled the same plant against *actual*
-Danish (DK1) imbalance prices (effective penalty 11–28 €/MWh in
+Danish (DK1) imbalance prices (effective penalty ~10–28 €/MWh in
 2021–2023). In normal years, cheap-forecast sizing got the capacity
 right at every plant configuration tested. In the 2022 crisis year,
-**wind-heavy plants split: the cheap forecast buys 8 MWh where the
-ensemble buys 4** under real two-price settlement. The March-2025
-Nordic balancing reforms sustain crisis-level spreads (92–123 €/MWh
-average up-regulation) — the regime 2022 previewed is plausibly the
-new normal:
+wind-heavy plants split (the cheap forecast wanting 8 MWh where the
+ensemble wants 4) — **but only under a *counterfactual* two-price
+settlement regime that Denmark retired in Nov 2021; under the one-price
+regime actually in force, there is no split**. The March-2025 Nordic
+balancing reforms sustain crisis-level spreads (92–123 €/MWh average
+up-regulation) — so the regime 2022 previewed is plausibly the new
+normal:
 
-(Measured per plant configuration and against both real settlement
-regimes — see `paper/figures/fig_paper_real_imbalance.png` and §5.2 of
-the paper.)
+![Left: real Danish settlement penalties sit left of the divergence bands in normal years. Right: the penalty bands where a cheap forecast wants a bigger battery, by wind/battery ratio.](paper/figures/fig_paper_real_imbalance.png)
+
+*Real 2021–2023 Danish settlement (grey) sits left of the divergence
+bands at most configurations; §5.2 of the paper has the full detail.*
 
 **How much is knowing the future worth?** Plan a year of dispatch for
 the same 16 MWh battery (DK1 2022) two ways: a **deterministic** plan
@@ -176,12 +221,15 @@ academic shortcut produces the wrong **capacity** recommendation.
 
 **Answer.** With no imbalance settlement (the pure-merchant limit),
 optimal capacity is identical across cheap and stochastic dispatch in
-**17 of 18 regimes** on DK1 and ERCOT North Hub, 2021–2023 — including
-the 2022 EU energy crisis and Storm Uri. The one break (DK1 2022 under
-a K=20 quantile ensemble) is the diagnostic firing correctly on the
-most-stressed regime. We report the results as an **adversarial ladder**
-— state the claim, then attack it with escalating challenges and mark
-which land:
+**17 of 18 regimes** across the three pre-registered stress tests (2-D
+sweep, quantile ensemble, scenario SLP × 6 market-years) on DK1 and
+ERCOT North Hub, 2021–2023 — including the 2022 EU energy crisis and
+Storm Uri. The one break there (DK1 2022 under a K=20 quantile ensemble)
+is the diagnostic firing correctly on the most-stressed regime. To push
+harder we then run a wider **adversarial ladder** — state the claim,
+attack it with six escalating challenges, and mark which land (the
+scoreboard below scores a few of them more strictly, which is why it
+surfaces a second fragile cell, ERCOT 2021):
 
 ![Stress-gauntlet scoreboard: 6 markets × 6 attacks; 32 of 36 cells keep the same optimal size, the 4 breaks clustering in DK1 2022 (quantile only) and the ERCOT 2021 Storm-Uri spike year.](paper/figures/fig_gauntlet.png)
 
@@ -193,8 +241,10 @@ appear — penalty ranges where a single-forecast plant sizes bigger
 than an ensemble one — opening at ≈25–35 €/MWh in normal years and
 ≈10–15 €/MWh in the 2022 crisis year for wind-heavy plants. Against
 *actual* eSett DK1 settlement: normal years stay invariant at every
-configuration; **the 2022 crisis year already split wind-heavy
-two-price plants (single 8 MWh vs ensemble 4 MWh)**. The March-2025
+configuration; the 2022 crisis year split wind-heavy plants (single
+8 MWh vs ensemble 4 MWh) **only under a *counterfactual* two-price
+settlement regime (which Denmark retired in Nov 2021) — under the
+one-price regime actually in force, there is no split**. The March-2025
 Nordic reforms sustain crisis-level spreads, so that divergence regime
 is plausibly the post-reform normal.
 
@@ -325,7 +375,7 @@ contradiction running between them.
 **Time.** Pre-registered design, dataset acquisition (Energinet + gridstatus + eSett), the dispatch-policy factorial, three LUMI stress tests, hydesign baseline integration, the imbalance-penalty + real-settlement extensions, the stochastic-programming decomposition and three-baseline framework, and three rounds of adversarial review (each of which materially changed the numbers — the settlement-accounting fix came out of the last). Submission draft ready; targeting a journal (Energy & AI / Applied Energy / Wind Energy Science) rather than a 4-page workshop, since the diagnostic and stress battery are the contribution.
 
 **Mid-term exam.** Diagnostic returns "invariance survives" on synthetic AR(1) where invariance must hold by construction. ✓
-**Final exam.** Diagnostic correctly fires "disjoint" on the one stress-test regime (of 18) where sizing actually shifts (DK1 2022 quantile ensemble). ✓ Divergence bands reproducible across years and wind ratios. ✓ Under *real* eSett DK1 settlement the diagnostic's prediction holds on both sides: normal years invariant at every configuration, and the 2022 crisis year splits wind-heavy two-price plants (single 8 MWh vs ensemble 4) exactly where the bands say it should. ✓
+**Final exam.** Diagnostic correctly fires "disjoint" on the one stress-test regime (of 18) where sizing actually shifts (DK1 2022 quantile ensemble). ✓ Divergence bands reproducible across years and wind ratios. ✓ Under *real* eSett DK1 settlement the diagnostic's prediction holds on both sides: normal years invariant at every configuration, and the 2022 crisis year splits wind-heavy plants (single 8 MWh vs ensemble 4) exactly where the bands say it should — though only under the counterfactual two-price regime (retired Nov 2021), not the in-force one-price. ✓
 
 ## Headline results
 
@@ -337,11 +387,11 @@ contradiction running between them.
 | Hydesign-default operational constraints vs unrestricted LP | **5.5–35.9% NPV gap** at argmax; $b_E^*$ shifts 2/6 regimes |
 | Imbalance divergence bands (wind + 1 MW battery, DK1, corrected settlement) | open at **≈25–35 €/MWh** normal years, **≈10–15** in 2022 crisis at ratios ≥ 10 |
 | Bands vs wind/battery ratio (W = 1/2/5/10/20 MW) | onset non-increasing in ratio; reaches realized-spread range in the crisis year |
-| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **11–28 €/MWh**; normal years invariant; 2022 wind-heavy splits only under a *counterfactual* two-price regime (retired Nov 2021), not one-price |
+| Real DK1 settlement (eSett two-price + one-price), 2021–23 | effective penalty **~10–28 €/MWh**; normal years invariant; 2022 wind-heavy splits only under a *counterfactual* two-price regime (retired Nov 2021), not one-price |
 | Continuous forecast-error dial γ (perfect → persistence → worse) | b_E\* **flat across the realistic skill range** (γ≤1), shrinks only for worse-than-persistence forecasts (which lose money) |
 | Stochastic-programming decomposition (WS/RP/EEV) | VSS & EVPI **positive for operation, zero for merchant capacity** |
 | CVaR sizing sweep (mean → CVaR₀.₈₅) | optimal $b_E$ **halves-to-quarters** — risk attitude moves sizing more than forecast quality |
-| Three baselines (perfect / honest / adversarial) | NPV: perfect > ensemble ≥ single > pessimist > adversary; **pessimist sizes smaller, not larger** |
+| Three baselines (perfect / honest / adversarial) | NPV: perfect > {single, ensemble} (near-tied; single often edges ensemble) > pessimist > adversary; **pessimist sizes smaller, not larger** |
 | Settlement-accounting fix (residual valued at DA) | removed an overbidder money-pump the quantile bidder exposed; all imbalance results regenerated |
 | Settlement-aware reserve dispatch (ρ ≤ 0.3) + single-site wind errors (γ ≤ 3) | reserve never pays below λ=500, bands unchanged; single-site errors push the **crisis-year** band into the realized-spread range |
 | Real settlement at wind-heavy ratios (10:1, 20:1) | normal years invariant; **2022 splits 8 vs 4 MWh under the *counterfactual* two-price regime only**, not the in-force one-price |
@@ -354,56 +404,59 @@ contradiction running between them.
 
 ```
 forecast-aware-sizing/
-├── paper/              workshop paper source + figures
-│   ├── paper.tex
-│   ├── paper.pdf
-│   └── figures/        fig_paper_*.png  (referenced via \graphicspath)
-├── sizing/             workshop paper code (flat package)
-│   ├── env.py, arbitrage_agents.py, b_sat_classifier.py
-│   ├── dk_loader.py, ercot_loader.py, price_signal.py, spectrum.py
-│   ├── hydesign_merchant_fork.py, hydesign_local_check.py
-│   ├── paper_benchmark.py, paper_2d_task.py, paper_quantile.py,
-│   ├── paper_slp.py, paper_timeseries.py, paper_hydesign.py,
-│   ├── paper_imbalance.py, paper_real_imbalance.py, ratio_sweep_cell.py,
-│   ├── paper_regret_ci.py     bootstrap/regret + replacement audit
-│   ├── paper_robust.py        max-min robust dispatch sweep
-│   ├── paper_ws_cvar.py       WS/RP/EEV decomposition + CVaR risk sweep
-│   ├── paper_quantile_bid.py  newsvendor wind bidding
-│   ├── paper_settlement_aware.py  reserve bands + wind-error inflation
-│   ├── paper_three_baselines.py   perfect / honest / adversarial
-│   ├── paper_stress_figures.py, paper_figures.py, real_imbalance_figures.py
-│   └── sanity_*.py
-├── rl_elm/             prior project: degradation-aware RL (see below)
-├── results/            tracked JSON outputs (2d/, quantile/, slp/,
-│                       hydesign/, imbalance/, main/, gbar/)
-├── scripts/lumi/       Slurm submission scripts (2d, quantile, slp, run)
-├── scripts/gbar/       LSF (DTU gbar) scripts; memrun.sh RSS watchdog
-├── docs/memos/         design + kill memos
-├── docs/preregistrations/  pre-registered amendments
-├── tests/              pytest entry points
-├── data/               raw market data (gitignored cache)
+├── paper/                 the paper (paper.tex, paper.pdf, figures/)
+├── sizing/                ALL code for the sizing study (flat package)
+│   ├── env.py, arbitrage_agents.py   battery model + dispatch LP/QP
+│   ├── b_sat_classifier.py           the diagnostic (pixi run diagnostic)
+│   ├── dk_loader.py, ercot_loader.py, price_signal.py, spectrum.py   data
+│   ├── paper_benchmark.py            main invariance benchmark
+│   ├── paper_imbalance.py, paper_real_imbalance.py, ratio_sweep_cell.py
+│   ├── paper_gamma_sweep.py          continuous forecast-error dial
+│   ├── paper_regret_ci.py, paper_robust.py, paper_ws_cvar.py         stress
+│   ├── paper_quantile_bid.py, paper_settlement_aware.py, paper_three_baselines.py
+│   ├── paper_hydesign.py, hydesign_merchant_fork.py    (need external hydesign)
+│   ├── readme_figures.py             -> fig_readme_npv, fig_readme_soc
+│   ├── fig_vss_capacity.py fig_marginal.py fig_ops_uncertainty.py
+│   ├── fig_gauntlet.py fig_baselines.py real_imbalance_figures.py   -> README figs
+│   ├── paper_stress_figures.py       -> the LaTeX fig_paper_* set
+│   └── sanity_*.py                   fast self-checks (pixi run test)
+├── rl_elm/                SEPARATE earlier project (RL-ELM degradation, see bottom)
+├── results/               committed JSON outputs the figures read
+├── scripts/{lumi,gbar}/   HPC job scripts + memrun.sh (1 GB RSS watchdog)
+├── docs/                  design memos + pre-registrations
+├── tests/, data/          tests; market-data cache (auto-downloads, gitignored)
 └── README.md, pixi.toml
 ```
+
+(`hydesign/` is an **optional external dependency** for the §4.6 baseline only —
+not part of this repo; install separately if you want that comparison.)
 
 ## Reproduce
 
 ```bash
-pixi install
-# Workshop paper §4 (main invariance test)
-pixi run python sizing/paper_benchmark.py
-# §4.6 hydesign-default off-the-shelf baseline
-pixi run python sizing/paper_hydesign.py --source dk1 --year 2022 \
-    --out results/hydesign/dk1_2022.json
-# §5.2 imbalance-penalty break-point
-pixi run python sizing/paper_imbalance.py --year 2022 \
-    --out results/imbalance/dk1_2022.json
-# All paper figures (writes into paper/figures/)
-pixi run python sizing/paper_stress_figures.py
-# Compile paper.pdf  (graphicspath = {figures/})
-cd paper && pdflatex paper.tex
+pixi install                 # set up the environment
+pixi run test                # ~30 s: fast self-checks pass
+pixi run readme-figures      # ~5 s: rebuild the two hero figures
+pixi run benchmark           # ~1 min smoke test (add nothing = --quick;
+                             #   edit pixi.toml to drop --quick for the full sweep)
 ```
 
-LUMI stress tests (§4-§5): `sbatch scripts/lumi/2d.sh`, `scripts/lumi/quantile.sh`, `scripts/lumi/slp.sh`. gbar (DTU): `scripts/gbar/run.sh deploy`.
+More:
+
+```bash
+pixi run diagnostic          # ~90 s: the invariance-survives verdict on a market
+pixi run hero-figures        # rebuild ALL figures embedded in this README
+pixi run imbalance           # §5.2 imbalance-penalty sweep (DK1 2022)
+pixi run paper-figures       # the LaTeX fig_paper_* set
+cd paper && pdflatex paper.tex   # compile the PDF
+```
+
+Note: `hero-figures` reads `results/main/gamma_sweep.json` (committed). To
+regenerate that input from scratch first run `pixi run python sizing/paper_gamma_sweep.py`.
+The §4.6 hydesign baseline (`pixi run python sizing/paper_hydesign.py …`) needs the
+optional external hydesign install.
+
+**HPC (optional):** LUMI stress tests — `sbatch scripts/lumi/{2d,quantile,slp}.sh`; gbar — `scripts/gbar/run.sh deploy`.
 
 ---
 

@@ -27,7 +27,7 @@ module load python3/3.11.9
 
 # 2. Build / reuse a venv in the project dir.
 #    Treat as "ready" only if the import sanity check passes; otherwise rebuild.
-VENV="$HOME/projects/battery_gym/.venv311"
+VENV="$HOME/projects/forecast-aware-sizing/.venv311"
 venv_ok=0
 if [ -d "$VENV" ]; then
     "$VENV/bin/python3" -c "import numpy, scipy, cvxpy, torch, stable_baselines3, gymnasium" 2>/dev/null && venv_ok=1

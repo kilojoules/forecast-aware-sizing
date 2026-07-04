@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=battery_gym
+#SBATCH --job-name=forecast-aware-sizing
 #SBATCH --account=project_465002609
 #SBATCH --partition=small
 #SBATCH --time=08:00:00

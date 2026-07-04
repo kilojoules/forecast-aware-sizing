@@ -15,7 +15,7 @@ set -e
 source /etc/profile 2>/dev/null || true
 module load python3/3.11.9
 
-cd "$HOME/projects/battery_gym"
+cd "$HOME/projects/forecast-aware-sizing"
 VENV=".venv311aware"
 if [ ! -f "$VENV/ok" ]; then
     python3 -m venv "$VENV"

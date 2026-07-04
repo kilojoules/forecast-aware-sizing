@@ -15,7 +15,7 @@
 # Each task runs 2 markets * 3 years * 4 policies on its (b_E, b_P).
 
 set -e
-cd /scratch/project_465002609/julian/battery_gym
+cd /scratch/project_465002609/julian/forecast-aware-sizing
 mkdir -p logs results/2d
 pixi run python -u sizing/paper_2d_task.py --task_id ${SLURM_ARRAY_TASK_ID} \
     --out_dir results/2d

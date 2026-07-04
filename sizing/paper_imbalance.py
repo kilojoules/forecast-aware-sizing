@@ -48,7 +48,7 @@ B_P = 1.0
 WIND_SCALE_MW = 5.0  # peak wind = 5 MW (typical HPP overbuild: wind > battery)
 LAGS_K4 = (24, 48, 168, 336)
 LAMBDA_GRID = [0.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0]  # EUR/MWh
-DISC = sum(1.07 ** -y for y in range(15))  # ~9.108
+DISC = sum(1.07 ** -y for y in range(15))  # ~9.745 (sum_{y=0..14} 1.07^-y)
 CAPEX_E = 100_000.0
 CAPEX_P = 75_000.0
 CHUNK_HOURS = 24 * 7 * 8  # 8 weeks; matches paper_benchmark stitch

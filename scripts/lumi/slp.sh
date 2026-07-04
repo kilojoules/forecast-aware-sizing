@@ -13,7 +13,7 @@
 
 # 6 array tasks: (dk1, ercot) x (2021, 2022, 2023). SLP is heavy.
 set -e
-cd /scratch/project_465002609/julian/battery_gym
+cd /scratch/project_465002609/julian/forecast-aware-sizing
 mkdir -p logs results/slp
 SOURCES=(dk1 dk1 dk1 ercot ercot ercot)
 YEARS=(2021 2022 2023 2021 2022 2023)

@@ -6,12 +6,17 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 
 [tasks]
-test = "python tests/sanity.py"
-test-priceenv = "python tests/test_price_env.py"
-benchmark = "python sizing/paper_benchmark.py"
+# --- sizing paper (the main project) ---
+test = "python sizing/sanity_arbitrage.py && python sizing/sanity_forecast.py && python sizing/sanity_jensen.py && python sizing/sanity_robust.py && python tests/test_price_env.py"
+diagnostic = "python sizing/b_sat_classifier.py"       # ~90s: invariance-survives verdict on a synthetic market
+benchmark = "python sizing/paper_benchmark.py --quick"  # ~1 min smoke test; drop --quick for the full 3-year/16-seed sweep
 imbalance = "python sizing/paper_imbalance.py --year 2022 --out results/imbalance/dk1_2022.json"
-figures = "python sizing/paper_stress_figures.py"
-readme-figures = "python sizing/readme_figures.py"
+readme-figures = "python sizing/readme_figures.py"      # the two hero figures (fig_readme_npv, fig_readme_soc)
+# rebuild every figure embedded in this README:
+hero-figures = "python sizing/readme_figures.py && python sizing/fig_vss_capacity.py && python sizing/fig_marginal.py && python sizing/fig_ops_uncertainty.py && python sizing/fig_gauntlet.py && python sizing/fig_baselines.py && python sizing/real_imbalance_figures.py"
+paper-figures = "python sizing/paper_stress_figures.py"  # the LaTeX fig_paper_* set
+# --- prior, unrelated project (RL-ELM degradation) ---
+test-rl-elm = "python tests/sanity.py"
 
 [dependencies]
 python = "3.11.*"
