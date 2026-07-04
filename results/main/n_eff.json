@@ -1,0 +1,58 @@
+{
+ "ref_b_E": 8.0,
+ "thresholds": {
+  "sufficient": 60.0,
+  "thin": 20.0
+ },
+ "rows": [
+  {
+   "regime": "dk1_2021",
+   "n_eff": 176.9891519048087,
+   "verdict": "sufficient",
+   "regret_mean": 0.01006363684629008,
+   "regret_p95": 0.0662186001744614,
+   "p_equal": 0.9105
+  },
+  {
+   "regime": "dk1_2022",
+   "n_eff": 223.9333749650841,
+   "verdict": "sufficient",
+   "regret_mean": 0.010442391647880243,
+   "regret_p95": 0.05031707793698895,
+   "p_equal": 0.669
+  },
+  {
+   "regime": "dk1_2023",
+   "n_eff": 231.1301182743822,
+   "verdict": "sufficient",
+   "regret_mean": 0.0036929440713628905,
+   "regret_p95": 0.0,
+   "p_equal": 0.983
+  },
+  {
+   "regime": "ercot_2021",
+   "n_eff": 8.948145757535425,
+   "verdict": "insufficient",
+   "regret_mean": 0.09999293040821548,
+   "regret_p95": 0.4684144479194429,
+   "p_equal": 0.6555
+  },
+  {
+   "regime": "ercot_2022",
+   "n_eff": 90.72700883425615,
+   "verdict": "sufficient",
+   "regret_mean": 0.00025732750244081536,
+   "regret_p95": 0.0,
+   "p_equal": 0.9765
+  },
+  {
+   "regime": "ercot_2023",
+   "n_eff": 37.0533248576454,
+   "verdict": "thin",
+   "regret_mean": 0.0004639244036408273,
+   "regret_p95": 0.0,
+   "p_equal": 0.9785
+  }
+ ],
+ "corr_inv_neff_regret": 0.9507450428797883
+}
